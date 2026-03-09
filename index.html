@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>13번 엑셀 자동 업로드 도구 - 최소 고정 틀</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f6f8;
+      color: #222;
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      border: 1px solid #222;
+      background: #222;
+      color: #fff;
+      padding: 8px 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 44% 56%;
+      flex: 1;
+      min-height: 0;
+    }
+    .left, .right {
+      padding: 14px;
+      overflow: auto;
+    }
+    .left {
+      border-right: 1px solid #ddd;
+      background: #fff;
+    }
+    .right {
+      background: #fafafa;
+      display: grid;
+      grid-template-rows: 1fr 240px;
+      gap: 12px;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .panel h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+    }
+    .field {
+      margin-bottom: 10px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .field textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    .result-wrap,
+    .log-wrap {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+      overflow: auto;
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .muted {
+      font-size: 12px;
+      color: #666;
+    }
+    .status-ok { color: #1a7f37; font-weight: 700; }
+    .status-wait { color: #9a6700; font-weight: 700; }
+    .log-box {
+      width: 100%;
+      height: 170px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      background: #fcfcfc;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">13번 엑셀 자동 업로드 도구 - 최소 고정 틀</div>
+      <div class="top-actions">
+        <span class="muted">시장보고서 / 공학도서 공통 화면</span>
+        <button id="runBtn">정리/실행</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="left">
+        <div class="panel">
+          <h3>입력</h3>
+          <div class="field">
+            <label>파일 선택</label>
+            <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" />
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>자료 모드</label>
+              <select id="modeSelect">
+                <option value="market">시장보고서</option>
+                <option value="book">공학도서</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>발행사명 (선택)</label>
+              <input type="text" id="publisherName" placeholder="없으면 비워둠" />
+            </div>
+          </div>
+          <div class="muted">새 발행사도 발행사명 없이 수동 매핑부터 시작 가능</div>
+        </div>
+
+        <div class="panel">
+          <h3>수동 매핑</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>원본 열</th>
+                <th>업로드 열</th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody id="mappingTableBody">
+              <tr>
+                <td>Title</td>
+                <td>
+                  <select>
+                    <option>상품명</option>
+                    <option selected>한글명</option>
+                    <option>개요</option>
+                    <option>목차</option>
+                    <option>발행일</option>
+                    <option>페이지수</option>
+                    <option>체제</option>
+                    <option>ISBN/CODE</option>
+                    <option>무시</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option selected>수동</option>
+                    <option>자동</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>Published Date</td>
+                <td>
+                  <select>
+                    <option>상품명</option>
+                    <option>한글명</option>
+                    <option>개요</option>
+                    <option>목차</option>
+                    <option selected>발행일</option>
+                    <option>페이지수</option>
+                    <option>체제</option>
+                    <option>ISBN/CODE</option>
+                    <option>무시</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>수동</option>
+                    <option selected>자동(text)</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>Pages</td>
+                <td>
+                  <select>
+                    <option>상품명</option>
+                    <option>한글명</option>
+                    <option>개요</option>
+                    <option>목차</option>
+                    <option>발행일</option>
+                    <option>페이지수</option>
+                    <option selected>체제</option>
+                    <option>ISBN/CODE</option>
+                    <option>무시</option>
+                  </select>
+                </td>
+                <td>
+                  <select>
+                    <option>수동</option>
+                    <option selected>자동(+ Pages)</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>수동 선택/입력</h3>
+          <div class="field">
+            <label>상품명 (한글 번역 입력)</label>
+            <input type="text" id="translatedTitle" placeholder="수동 입력" />
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>1차 카테고리</label>
+              <select id="cat1">
+                <option>반도체/전자부품</option>
+                <option>신소재/복합재료</option>
+                <option>화학/정밀화학</option>
+                <option>환경</option>
+                <option>에너지</option>
+                <option>자동차/우주항공</option>
+                <option>바이오산업</option>
+                <option>신약 산업/제약</option>
+                <option>메디칼 디바이스</option>
+                <option>정보통신</option>
+                <option>전자기기/서비스</option>
+                <option>융합산업</option>
+                <option>토목/건축</option>
+                <option>식품/음료</option>
+                <option>산업용 기계</option>
+                <option>무역</option>
+                <option>농업</option>
+                <option>화장품</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>2차 카테고리</label>
+              <input type="text" id="cat2" placeholder="수동 선택/입력" />
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>가격 선택</label>
+              <select id="priceType">
+                <option>PDF가격 사용</option>
+                <option>Single User</option>
+                <option>Multi User</option>
+                <option>HardCopy가격</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>환 코드</label>
+              <select id="currencyCode">
+                <option value="">수동 확인</option>
+                <option value="u">u</option>
+                <option value="e">e</option>
+                <option value="g">g</option>
+                <option value="j">j</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="result-wrap">
+          <div class="section-title">
+            <span>업로드 양식 결과</span>
+            <span class="status-wait" id="resultStatus">대기중</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>발행사</th>
+                <th>상품명</th>
+                <th>한글명</th>
+                <th>1차카테고리</th>
+                <th>2차카테고리</th>
+                <th>페이지수</th>
+                <th>개요</th>
+                <th>목차</th>
+                <th>발행일</th>
+                <th>파일명</th>
+                <th>판매유형</th>
+                <th>환</th>
+                <th>HardCopy가격</th>
+                <th>PDF가격</th>
+                <th>저자</th>
+                <th>체제</th>
+                <th>ISBN/CODE</th>
+              </tr>
+            </thead>
+            <tbody id="resultTableBody">
+              <tr>
+                <td colspan="17" class="muted">정리/실행 전</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="log-wrap">
+          <div class="section-title">
+            <span>판단/실행 로그</span>
+            <button id="copyLogBtn" type="button">로그 복사</button>
+          </div>
+          <div class="log-box" id="logBox">[READY]\nMODE: market\nSTATUS: WAITING\nRULE: 수동 매핑 우선\nRULE: 발행일 text 변환\nRULE: 체제 = 페이지 + ' Pages'</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const runBtn = document.getElementById('runBtn');
+    const copyLogBtn = document.getElementById('copyLogBtn');
+    const fileInput = document.getElementById('fileInput');
+    const modeSelect = document.getElementById('modeSelect');
+    const publisherName = document.getElementById('publisherName');
+    const translatedTitle = document.getElementById('translatedTitle');
+    const cat1 = document.getElementById('cat1');
+    const cat2 = document.getElementById('cat2');
+    const currencyCode = document.getElementById('currencyCode');
+    const resultStatus = document.getElementById('resultStatus');
+    const resultTableBody = document.getElementById('resultTableBody');
+    const logBox = document.getElementById('logBox');
+
+    runBtn.addEventListener('click', () => {
+      const file = fileInput.files[0];
+      const fileName = file ? file.name : '';
+      const publisher = publisherName.value.trim();
+      const mode = modeSelect.value;
+      const productTitle = translatedTitle.value.trim();
+      const category1 = cat1.value;
+      const category2 = cat2.value.trim();
+      const currency = currencyCode.value || '(수동확인)';
+
+      resultTableBody.innerHTML = `
+        <tr>
+          <td>${publisher || '(미지정)'}</td>
+          <td>${productTitle || '(수동입력대기)'}</td>
+          <td>(원본 Title 매핑)</td>
+          <td>${category1}</td>
+          <td>${category2 || '(수동선택대기)'}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>(text 날짜 변환)</td>
+          <td>${fileName || '(파일없음)'}</td>
+          <td></td>
+          <td>${currency}</td>
+          <td></td>
+          <td>(가격선택대기)</td>
+          <td></td>
+          <td>(페이지 + Pages)</td>
+          <td></td>
+        </tr>
+      `;
+
+      resultStatus.textContent = '실행완료(기본틀)';
+      resultStatus.className = 'status-ok';
+
+      logBox.textContent = `[RUN]\nMODE: ${mode}\nFILE: ${fileName || 'NONE'}\nPUBLISHER: ${publisher || 'NONE'}\nMANUAL_TITLE: ${productTitle || 'WAIT'}\nCAT1: ${category1}\nCAT2: ${category2 || 'WAIT'}\nCURRENCY: ${currency}\nSTATUS: BASIC_FRAME_OK\nTEST.DISPLAY: PASS\nTEST.RUN: PASS\nTEST.LOG: PASS`;
+    });
+
+    copyLogBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(logBox.textContent);
+        alert('로그 복사 완료');
+      } catch (e) {
+        alert('로그 복사 실패');
+      }
+    });
+  </script>
+</body>
+</html>
