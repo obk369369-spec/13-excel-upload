@@ -66,7 +66,7 @@
   .log{border:1px solid var(--line);border-radius:8px;min-height:110px;padding:8px;white-space:pre-wrap;font-size:12px;overflow:auto}
   
   .diag-panel{
-    position:fixed; left:12px; right:12px; bottom:10px; height:180px; overflow:auto;
+    position:fixed; left:12px; right:12px; bottom:10px; height:auto; min-height:260px; max-height:none; overflow:visible;
     border:1px solid #0f172a; border-radius:12px; background:#0b1220; color:#e5eefc;
     z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.28); padding:10px;
   }
@@ -87,15 +87,15 @@
 .progress-fill{height:100%; width:0%; background:#60a5fa; transition:width .2s ease;}
 .progress-labels{display:flex; justify-content:space-between; gap:8px; font-size:11px; color:#cbd5e1; margin-top:4px;}
 .bottom-logs{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;}
-.mini-log{border:1px solid #334155; border-radius:8px; padding:8px; font-size:11px; white-space:pre-wrap; word-break:break-word; max-height:110px; overflow:auto;}
+.mini-log{border:1px solid #334155; border-radius:8px; padding:8px; font-size:11px; white-space:pre-wrap; word-break:break-word; max-height:none; overflow:visible;}
 .mini-title{font-weight:bold; margin-bottom:6px;}
 .stamp{font-size:11px; color:#cbd5e1;}
   .capture-on{outline:2px dashed #ef4444 !important; outline-offset:2px;}
-  body{padding-bottom:200px !important;}
+  body{padding-bottom:360px !important;}
   @media (max-width:1100px){
-    .diag-panel{height:220px;}
     .diag-grid{grid-template-columns:120px 1fr 120px 1fr;}
     .diag-sections{grid-template-columns:1fr;}
+    .bottom-logs{grid-template-columns:1fr;}
   }
 
   @media (max-width:1100px){ .layout{grid-template-columns:1fr} .grid2{grid-template-columns:1fr} }
