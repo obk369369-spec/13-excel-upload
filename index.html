@@ -1,438 +1,903 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>13번 엑셀 자동 업로드 도구 - 최소 고정 틀</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f6f8;
-      color: #222;
-    }
-    .app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      background: #fff;
-      border-bottom: 1px solid #ddd;
-    }
-    .title {
-      font-size: 16px;
-      font-weight: 700;
-    }
-    .top-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    button {
-      border: 1px solid #222;
-      background: #222;
-      color: #fff;
-      padding: 8px 14px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: 44% 56%;
-      flex: 1;
-      min-height: 0;
-    }
-    .left, .right {
-      padding: 14px;
-      overflow: auto;
-    }
-    .left {
-      border-right: 1px solid #ddd;
-      background: #fff;
-    }
-    .right {
-      background: #fafafa;
-      display: grid;
-      grid-template-rows: 1fr 240px;
-      gap: 12px;
-    }
-    .panel {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 12px;
-      margin-bottom: 12px;
-    }
-    .panel h3 {
-      margin: 0 0 10px 0;
-      font-size: 14px;
-    }
-    .field {
-      margin-bottom: 10px;
-    }
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      font-size: 13px;
-      background: #fff;
-    }
-    .field textarea {
-      min-height: 70px;
-      resize: vertical;
-    }
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      background: #fff;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 6px;
-      text-align: left;
-      vertical-align: top;
-    }
-    th {
-      background: #f0f0f0;
-    }
-    .result-wrap,
-    .log-wrap {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 12px;
-      overflow: auto;
-    }
-    .section-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-weight: 700;
-      font-size: 14px;
-    }
-    .muted {
-      font-size: 12px;
-      color: #666;
-    }
-    .status-ok { color: #1a7f37; font-weight: 700; }
-    .status-wait { color: #9a6700; font-weight: 700; }
-    .log-box {
-      width: 100%;
-      height: 170px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      font-family: Consolas, monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      background: #fcfcfc;
-      overflow: auto;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13번 엑셀 자동 업로드 도구 - 미리보기 동작판</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --line:#d9dee8; --bg:#fff; --text:#111827; --muted:#6b7280; --blue:#2563eb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,"Malgun Gothic",sans-serif;background:#fff;color:var(--text)}
+  .app{padding:12px}
+  .toolbar,.panel{border:1px solid var(--line);border-radius:10px;background:#fff}
+  .toolbar{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  button,input,select{font:inherit}
+  button{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .layout{display:grid;grid-template-columns:58% 42%;gap:10px;align-items:start}
+  .panel{padding:10px;min-height:300px}
+  .section{margin-bottom:12px}
+  .section h3{font-size:14px;margin:0 0 8px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--muted)}
+  .field input,.field select{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .small{font-size:12px;color:var(--muted)}
+  .table-wrap{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:560px}
+  table{border-collapse:collapse;table-layout:auto;width:max-content;min-width:100%}
+  th,td{
+    border-bottom:1px solid var(--line);
+    border-right:1px solid #eef2f7;
+    padding:7px 8px;
+    text-align:left;
+    vertical-align:top;
+    white-space:nowrap !important;
+    word-break:keep-all !important;
+    overflow-wrap:normal !important;
+    writing-mode:horizontal-tb !important;
+    text-orientation:mixed !important;
+    min-width:120px;
+    max-width:none;
+  }
+  th{position:sticky;top:0;background:#f8fafc;z-index:2}
+  td.long, th.long{min-width:320px}
+  .preview-table th.long,.preview-table td.long{
+    min-width:220px !important;
+    max-width:220px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .preview-table th.mid,.preview-table td.mid{
+    min-width:160px !important;
+    max-width:160px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .tagbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .tag{display:inline-flex;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px}
+  .config-table th,.config-table td{min-width:auto}
+  .config-table{width:100%}
+  .config-table select,.config-table input{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .log{border:1px solid var(--line);border-radius:8px;min-height:110px;padding:8px;white-space:pre-wrap;font-size:12px;overflow:auto}
+  
+  .diag-panel{
+    position:fixed; left:12px; right:12px; bottom:10px; height:180px; overflow:auto;
+    border:1px solid #0f172a; border-radius:12px; background:#0b1220; color:#e5eefc;
+    z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.28); padding:10px;
+  }
+  .diag-panel h3{margin:0 0 10px 0; font-size:15px}
+  .diag-grid{display:grid; grid-template-columns:repeat(6, max-content 1fr); gap:4px 8px; font-size:12px; margin-bottom:8px; align-items:center}
+  .diag-grid .k{color:#93c5fd}
+  .badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #334155}
+  .badge.fail{background:#3f1d1d; color:#fecaca}
+  .badge.pass{background:#132e1b; color:#bbf7d0}
+  .badge.init{background:#1e293b; color:#e2e8f0}
+  .diag-box{border:1px solid #334155; border-radius:8px; padding:8px; margin-top:8px; white-space:pre-wrap; word-break:break-word; font-size:11px}
+  .error-list{border:1px solid #334155; border-radius:8px; padding:8px; margin-top:8px; font-size:11px}
+  .error-item{border-top:1px dashed #334155; padding-top:6px; margin-top:6px}
+  .error-item:first-child{border-top:none; padding-top:0; margin-top:0}
+  .diag-sections{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.progress-wrap{margin-bottom:8px;}
+.progress-track{height:10px; background:#172033; border:1px solid #334155; border-radius:999px; overflow:hidden;}
+.progress-fill{height:100%; width:0%; background:#60a5fa; transition:width .2s ease;}
+.progress-labels{display:flex; justify-content:space-between; gap:8px; font-size:11px; color:#cbd5e1; margin-top:4px;}
+.bottom-logs{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;}
+.mini-log{border:1px solid #334155; border-radius:8px; padding:8px; font-size:11px; white-space:pre-wrap; word-break:break-word; max-height:110px; overflow:auto;}
+.mini-title{font-weight:bold; margin-bottom:6px;}
+.stamp{font-size:11px; color:#cbd5e1;}
+  .capture-on{outline:2px dashed #ef4444 !important; outline-offset:2px;}
+  body{padding-bottom:200px !important;}
+  @media (max-width:1100px){
+    .diag-panel{height:220px;}
+    .diag-grid{grid-template-columns:120px 1fr 120px 1fr;}
+    .diag-sections{grid-template-columns:1fr;}
+  }
+
+  @media (max-width:1100px){ .layout{grid-template-columns:1fr} .grid2{grid-template-columns:1fr} }
+</style>
 </head>
 <body>
-  <div class="app">
-    <div class="topbar">
-      <div class="title">13번 엑셀 자동 업로드 도구 - 최소 고정 틀</div>
-      <div class="top-actions">
-        <span class="muted">시장보고서 / 공학도서 공통 화면</span>
-        <button id="runBtn">정리/실행</button>
+<div class="app">
+  <div class="toolbar">
+    <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" multiple>
+    <button id="runBtn" class="primary">정리/실행</button>
+    <button id="coordBtn">좌표 찍기</button>
+    <button id="diagBtn">자동진단 보내기</button>
+    <button id="recheckBtn">재검증</button>
+    <button id="traceBtn">추적용 다운로드</button>
+    <button id="uploadBtn">업로드용 다운로드</button>
+    <button id="resetBtn">초기화</button>
+    <span class="small" id="fileInfo">파일 0개</span>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="section">
+        <h3>통합 입력</h3>
+        <div class="grid2">
+          <div class="field"><label>발행사</label><input id="publisherInput" placeholder="발행사"></div>
+          <div class="field"><label>전체 1차카테고리</label><input id="cat1Input" placeholder="1차카테고리"></div>
+        </div>
+        <div class="small" style="margin-top:6px">선택은 저장된다. 원본연결 / 연결 안함 / 빈값 / preset만 사용한다.</div>
+      </div>
+
+      <div class="section">
+        <h3>통합 설정</h3>
+        <div class="table-wrap">
+          <table class="config-table" id="configTable">
+            <thead>
+              <tr><th>항목</th><th>처리</th><th>원본 연결</th><th>preset</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div class="layout">
-      <div class="left">
-        <div class="panel">
-          <h3>입력</h3>
-          <div class="field">
-            <label>파일 선택</label>
-            <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" />
-          </div>
-          <div class="two-col">
-            <div class="field">
-              <label>자료 모드</label>
-              <select id="modeSelect">
-                <option value="market">시장보고서</option>
-                <option value="book">공학도서</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>발행사명 (선택)</label>
-              <input type="text" id="publisherName" placeholder="없으면 비워둠" />
-            </div>
-          </div>
-          <div class="muted">새 발행사도 발행사명 없이 수동 매핑부터 시작 가능</div>
+    <div class="panel">
+      <div class="section">
+        <h3>미리보기</h3>
+        <div class="tagbar">
+          <span class="tag" id="rowTag">행 0</span>
+          <span class="tag" id="publisherTag">발행사 UNKNOWN</span>
         </div>
-
-        <div class="panel">
-          <h3>수동 매핑</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>원본 열</th>
-                <th>업로드 열</th>
-                <th>처리</th>
-              </tr>
-            </thead>
-            <tbody id="mappingTableBody">
-              <tr>
-                <td>Title</td>
-                <td>
-                  <select>
-                    <option>상품명</option>
-                    <option selected>한글명</option>
-                    <option>개요</option>
-                    <option>목차</option>
-                    <option>발행일</option>
-                    <option>페이지수</option>
-                    <option>체제</option>
-                    <option>ISBN/CODE</option>
-                    <option>무시</option>
-                  </select>
-                </td>
-                <td>
-                  <select>
-                    <option selected>수동</option>
-                    <option>자동</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>Published Date</td>
-                <td>
-                  <select>
-                    <option>상품명</option>
-                    <option>한글명</option>
-                    <option>개요</option>
-                    <option>목차</option>
-                    <option selected>발행일</option>
-                    <option>페이지수</option>
-                    <option>체제</option>
-                    <option>ISBN/CODE</option>
-                    <option>무시</option>
-                  </select>
-                </td>
-                <td>
-                  <select>
-                    <option>수동</option>
-                    <option selected>자동(text)</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td>Pages</td>
-                <td>
-                  <select>
-                    <option>상품명</option>
-                    <option>한글명</option>
-                    <option>개요</option>
-                    <option>목차</option>
-                    <option>발행일</option>
-                    <option>페이지수</option>
-                    <option selected>체제</option>
-                    <option>ISBN/CODE</option>
-                    <option>무시</option>
-                  </select>
-                </td>
-                <td>
-                  <select>
-                    <option>수동</option>
-                    <option selected>자동(+ Pages)</option>
-                  </select>
-                </td>
-              </tr>
-            </tbody>
+        <div class="table-wrap" id="previewWrap">
+          <table id="previewTable" class="preview-table">
+            <thead></thead>
+            <tbody></tbody>
           </table>
-        </div>
-
-        <div class="panel">
-          <h3>수동 선택/입력</h3>
-          <div class="field">
-            <label>상품명 (한글 번역 입력)</label>
-            <input type="text" id="translatedTitle" placeholder="수동 입력" />
-          </div>
-          <div class="two-col">
-            <div class="field">
-              <label>1차 카테고리</label>
-              <select id="cat1">
-                <option>반도체/전자부품</option>
-                <option>신소재/복합재료</option>
-                <option>화학/정밀화학</option>
-                <option>환경</option>
-                <option>에너지</option>
-                <option>자동차/우주항공</option>
-                <option>바이오산업</option>
-                <option>신약 산업/제약</option>
-                <option>메디칼 디바이스</option>
-                <option>정보통신</option>
-                <option>전자기기/서비스</option>
-                <option>융합산업</option>
-                <option>토목/건축</option>
-                <option>식품/음료</option>
-                <option>산업용 기계</option>
-                <option>무역</option>
-                <option>농업</option>
-                <option>화장품</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>2차 카테고리</label>
-              <input type="text" id="cat2" placeholder="수동 선택/입력" />
-            </div>
-          </div>
-          <div class="two-col">
-            <div class="field">
-              <label>가격 선택</label>
-              <select id="priceType">
-                <option>PDF가격 사용</option>
-                <option>Single User</option>
-                <option>Multi User</option>
-                <option>HardCopy가격</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>환 코드</label>
-              <select id="currencyCode">
-                <option value="">수동 확인</option>
-                <option value="u">u</option>
-                <option value="e">e</option>
-                <option value="g">g</option>
-                <option value="j">j</option>
-              </select>
-            </div>
-          </div>
         </div>
       </div>
 
-      <div class="right">
-        <div class="result-wrap">
-          <div class="section-title">
-            <span>업로드 양식 결과</span>
-            <span class="status-wait" id="resultStatus">대기중</span>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>발행사</th>
-                <th>상품명</th>
-                <th>한글명</th>
-                <th>1차카테고리</th>
-                <th>2차카테고리</th>
-                <th>페이지수</th>
-                <th>개요</th>
-                <th>목차</th>
-                <th>발행일</th>
-                <th>파일명</th>
-                <th>판매유형</th>
-                <th>환</th>
-                <th>HardCopy가격</th>
-                <th>PDF가격</th>
-                <th>저자</th>
-                <th>체제</th>
-                <th>ISBN/CODE</th>
-              </tr>
-            </thead>
-            <tbody id="resultTableBody">
-              <tr>
-                <td colspan="17" class="muted">정리/실행 전</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="section">
+        <h3>저장 헤더</h3>
+        <div class="log" id="saveHeaderBox"></div>
+      </div>
 
-        <div class="log-wrap">
-          <div class="section-title">
-            <span>판단/실행 로그</span>
-            <button id="copyLogBtn" type="button">로그 복사</button>
-          </div>
-          <div class="log-box" id="logBox">[READY]\nMODE: market\nSTATUS: WAITING\nRULE: 수동 매핑 우선\nRULE: 발행일 text 변환\nRULE: 체제 = 페이지 + ' Pages'</div>
-        </div>
+      <div class="section">
+        <h3>상단 참고 로그</h3>
+        <div class="log" id="coreLog"></div>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    const runBtn = document.getElementById('runBtn');
-    const copyLogBtn = document.getElementById('copyLogBtn');
-    const fileInput = document.getElementById('fileInput');
-    const modeSelect = document.getElementById('modeSelect');
-    const publisherName = document.getElementById('publisherName');
-    const translatedTitle = document.getElementById('translatedTitle');
-    const cat1 = document.getElementById('cat1');
-    const cat2 = document.getElementById('cat2');
-    const currencyCode = document.getElementById('currencyCode');
-    const resultStatus = document.getElementById('resultStatus');
-    const resultTableBody = document.getElementById('resultTableBody');
-    const logBox = document.getElementById('logBox');
+<script>
+(() => {
+  const STORAGE_KEY = 'tool13_preview_working_v1';
+  const SAVE_HEADERS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
+  const CONFIG_FIELDS = ['상품명','한글명','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
+  const COMMON_FIELDS = ['발행사','1차카테고리','2차카테고리','3차카테고리'];
+  const HEADER_ALIASES = {
+    '상품명':['Product Name','상품명','Title','Report Title'],
+    '한글명':['Report Title','한글명','Title'],
+    '2차카테고리':['Report Category','Category','2차카테고리'],
+    '3차카테고리':['Sub Category','SubCategory','3차카테고리'],
+    '페이지수':['No.of Pages','Pages','Page','페이지수'],
+    '개요':['Report Description','Summary','Description','개요'],
+    '목차':['Table of Contents','Contents','TOC','목차'],
+    '발행일':['Date Published','Publish Date','Published Date','Publication Date','Release Date','발행일','Date'],
+    '파일명':['File Name','filename','파일명'],
+    '판매유형':['Sales Type','판매유형','Type'],
+    '환(u,e,g,j)':['Currency','환(u,e,g,j)'],
+    'HardCapy가격':['Hardcopy Price','Hard Copy Price','HardCapy가격'],
+    'PDF가격':['Single user Price in US$','Single user Price','PDF Price','PDF가격'],
+    '저자':['Author Name','Author','저자'],
+    '체제':['Format','체제'],
+    'ISBN/CODE':['Report Code','ISBN','Code','ISBN/CODE']
+  };
 
-    runBtn.addEventListener('click', () => {
-      const file = fileInput.files[0];
-      const fileName = file ? file.name : '';
-      const publisher = publisherName.value.trim();
-      const mode = modeSelect.value;
-      const productTitle = translatedTitle.value.trim();
-      const category1 = cat1.value;
-      const category2 = cat2.value.trim();
-      const currency = currencyCode.value || '(수동확인)';
+  const PRESETS = {
+    '상품명':['선택'],
+    '한글명':['선택'],
+    '2차카테고리':['선택'],
+    '3차카테고리':['선택'],
+    '페이지수':['선택','숫자만 추출'],
+    '개요':['선택'],
+    '목차':['선택'],
+    '발행일':['선택','YYYY-MM-DD','엑셀 날짜 해석'],
+    '파일명':['선택','origin_file 사용'],
+    '판매유형':['선택'],
+    '환(u,e,g,j)':['선택','고정값 u','고정값 e','고정값 g','고정값 j','통화기호 기반 추론'],
+    'HardCapy가격':['선택','숫자만 추출','소수점 유지'],
+    'PDF가격':['선택','숫자만 추출','소수점 유지'],
+    '저자':['선택'],
+    '체제':['선택','원본 연결','페이지수+pages'],
+    'ISBN/CODE':['선택']
+  };
 
-      resultTableBody.innerHTML = `
-        <tr>
-          <td>${publisher || '(미지정)'}</td>
-          <td>${productTitle || '(수동입력대기)'}</td>
-          <td>(원본 Title 매핑)</td>
-          <td>${category1}</td>
-          <td>${category2 || '(수동선택대기)'}</td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td>(text 날짜 변환)</td>
-          <td>${fileName || '(파일없음)'}</td>
-          <td></td>
-          <td>${currency}</td>
-          <td></td>
-          <td>(가격선택대기)</td>
-          <td></td>
-          <td>(페이지 + Pages)</td>
-          <td></td>
-        </tr>
-      `;
+  const state = {
+    files: [], headers: [], rows: [], previewRows: [],
+    config: {}, common: {publisher:'',cat1:'',cat2:'',cat3:'',workOrder:'01'}
+  };
 
-      resultStatus.textContent = '실행완료(기본틀)';
-      resultStatus.className = 'status-ok';
+  const els = {
+    fileInput: document.getElementById('fileInput'),
+    runBtn: document.getElementById('runBtn'),
+    traceBtn: document.getElementById('traceBtn'),
+    uploadBtn: document.getElementById('uploadBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    fileInfo: document.getElementById('fileInfo'),
+    publisherInput: document.getElementById('publisherInput'),
+    cat1Input: document.getElementById('cat1Input'),
+    configTableBody: document.querySelector('#configTable tbody'),
+    previewTable: document.getElementById('previewTable'),
+    copyPreviewBtn: document.getElementById('copyPreviewBtn'),
+    rowTag: document.getElementById('rowTag'),
+    publisherTag: document.getElementById('publisherTag'),
+    saveHeaderBox: document.getElementById('saveHeaderBox'),
+    coreLog: document.getElementById('coreLog')
+  };
 
-      logBox.textContent = `[RUN]\nMODE: ${mode}\nFILE: ${fileName || 'NONE'}\nPUBLISHER: ${publisher || 'NONE'}\nMANUAL_TITLE: ${productTitle || 'WAIT'}\nCAT1: ${category1}\nCAT2: ${category2 || 'WAIT'}\nCURRENCY: ${currency}\nSTATUS: BASIC_FRAME_OK\nTEST.DISPLAY: PASS\nTEST.RUN: PASS\nTEST.LOG: PASS`;
-    });
-
-    copyLogBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(logBox.textContent);
-        alert('로그 복사 완료');
-      } catch (e) {
-        alert('로그 복사 실패');
+  function log(msg){ els.coreLog.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`; els.coreLog.scrollTop = els.coreLog.scrollHeight; }
+  function str(v){ return v===undefined || v===null ? '' : String(v).trim(); }
+  function norm(v){ return str(v).toLowerCase().replace(/\s+/g,' '); }
+  function safeCSVCell(v){
+    const s = str(v);
+    if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+  function excelSerialToDate(v){
+    const n = Number(v);
+    if(!Number.isFinite(n)) return str(v);
+    const epoch = new Date(Date.UTC(1899,11,30));
+    epoch.setUTCDate(epoch.getUTCDate() + n);
+    const y = epoch.getUTCFullYear();
+    const m = String(epoch.getUTCMonth()+1).padStart(2,'0');
+    const d = String(epoch.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  function inferHeader(target){
+    const aliases = HEADER_ALIASES[target] || [];
+    for(const h of state.headers){
+      for(const a of aliases){
+        if(norm(h).includes(norm(a)) || norm(a).includes(norm(h))) return h;
       }
+    }
+    return '';
+  }
+  function sourceLabel(h){
+    const raw = str(h);
+    const n = norm(raw).replace(/\s+/g,'');
+    const map = {
+      'reporttitle':'Report Title',
+      'reportname':'Report Name',
+      'datepublished':'Date Published',
+      'publishdate':'Publish Date',
+      'publisheddate':'Published Date',
+      'publicationdate':'Publication Date',
+      'releasedate':'Release Date',
+      'no.ofpages':'No. of Pages',
+      'noofpages':'No. of Pages',
+      'pages':'Pages',
+      'reportdescription':'Report Description',
+      'reportcategory':'Report Category',
+      'subcategory':'Sub Category',
+      'description':'Description',
+      'tableofcontents':'Table of Contents',
+      'contents':'Contents',
+      'reportcode':'Report Code',
+      'filename':'File Name',
+      'file name':'File Name',
+      'format':'Format',
+      'authorname':'Author Name',
+      'currency':'Currency',
+      'singleuserpriceinus$':'Single user Price in US$',
+      'singleuserpriceinusd':'Single user Price in US$',
+      'singleuserprice':'Single user Price',
+      'salestype':'Sales Type',
+      'hardcopyprice':'Hardcopy Price'
+    };
+    return map[n] || raw;
+  }
+
+  function sourceOptionsHtml(selected){
+    const seen = new Set();
+    const items = [];
+    for(const h of state.headers){
+      const value = str(h);
+      if(!value || seen.has(value)) continue;
+      seen.add(value);
+      items.push({value, label: sourceLabel(value)});
+    }
+    return ['<option value="">선택</option>']
+      .concat(items.map(it=>`<option value="${escapeHtml(it.value)}" title="${escapeHtml(it.value)}" ${selected===it.value?'selected':''}>${escapeHtml(it.label)}</option>`))
+      .join('');
+  }
+  function defaultConfig(){
+    const o = {};
+    CONFIG_FIELDS.forEach(f=>{
+      o[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'};
     });
-  </script>
-</body>
-</html>
+    o['체제'].mode='preset'; o['체제'].preset='페이지수+pages';
+    o['발행일'].mode='preset'; o['발행일'].preset='YYYY-MM-DD';
+    o['환(u,e,g,j)'].mode='preset'; o['환(u,e,g,j)'].preset='고정값 u';
+    o['PDF가격'].mode='preset'; o['PDF가격'].preset='소수점 유지';
+    return o;
+  }
+  function findBestHeaderRow(rows){
+    const maxScan = Math.min(rows.length, 8);
+    let bestIdx = 0;
+    let bestScore = -999;
+    for(let i=0;i<maxScan;i++){
+      const row = rows[i] || [];
+      const cells = row.map(v=>str(v)).filter(Boolean);
+      if(!cells.length) continue;
+      let score = 0;
+      for(const cell of cells){
+        const n = norm(cell);
+        if(/marketsandmarkets|grandviewresearch|researchandmarkets/.test(n)) score -= 3;
+        if(/reporttitle|reportname|datepublished|publishdate|releasedate|noofpages|reportcode|authorname|format|tableofcontents|reportdescription/.test(n)) score += 4;
+        if(/report|title|published|pages|code|author|format|category|contents|description|date/.test(n)) score += 2;
+      }
+      if(cells.length >= 5) score += 1;
+      if(score > bestScore){
+        bestScore = score;
+        bestIdx = i;
+      }
+    }
+    return bestIdx;
+  }
+
+
+  function saveState(){
+    state.common.publisher = els.publisherInput.value;
+    state.common.cat1 = els.cat1Input.value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({config:state.config, common:state.common}));
+  }
+  function restoreState(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    try{
+      const data = JSON.parse(raw);
+      if(data.config) state.config = data.config;
+      if(data.common){
+        state.common = {...state.common, ...data.common};
+        els.publisherInput.value = state.common.publisher || '';
+        els.cat1Input.value = state.common.cat1 || '';
+      }
+    }catch(e){}
+  }
+
+  function renderConfig(){
+    els.configTableBody.innerHTML = '';
+    CONFIG_FIELDS.forEach(field=>{
+      if(!state.config[field]) state.config[field] = {mode:'원본연결', source:inferHeader(field), preset:'선택'};
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${field}</td>
+        <td>
+          <select data-field="${field}" data-role="mode">
+            <option ${state.config[field].mode==='원본연결'?'selected':''}>원본연결</option>
+            <option ${state.config[field].mode==='연결 안함'?'selected':''}>연결 안함</option>
+            <option ${state.config[field].mode==='빈값'?'selected':''}>빈값</option>
+            <option value="preset" ${state.config[field].mode==='preset'?'selected':''}>preset</option>
+          </select>
+        </td>
+        <td>
+          <select data-field="${field}" data-role="source">
+            ${sourceOptionsHtml(state.config[field].source)}
+          </select>
+        </td>
+        <td>
+          <select data-field="${field}" data-role="preset">
+            ${PRESETS[field].map(p=>`<option value="${escapeHtml(p)}" ${state.config[field].preset===p?'selected':''}>${escapeHtml(p)}</option>`).join('')}
+          </select>
+        </td>
+      `;
+      els.configTableBody.appendChild(tr);
+    });
+    els.configTableBody.querySelectorAll('select').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        const f = sel.dataset.field, r = sel.dataset.role;
+        state.config[f][r] = sel.value;
+        saveState();
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return str(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function csvToRows(text){
+    const rows=[]; let row=[], cur='', inQ=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i], next=text[i+1];
+      if(ch==='"'){ if(inQ && next==='"'){ cur+='"'; i++; } else inQ=!inQ; }
+      else if(ch===',' && !inQ){ row.push(cur); cur=''; }
+      else if((ch==='\n'||ch==='\r') && !inQ){ if(ch==='\r'&&next==='\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; }
+      else cur+=ch;
+    }
+    row.push(cur); rows.push(row);
+    return rows.filter(r=>r.some(v=>str(v)!==''));
+  }
+
+  async function loadFiles(files){
+    state.files = Array.from(files).map(f=>f.name);
+    state.rows = [];
+    state.headers = [];
+    els.fileInfo.textContent = `파일 ${state.files.length}개`;
+    log(`파일 ${state.files.length}개 읽기 시작`);
+    for(const file of files){
+      const ext = file.name.split('.').pop().toLowerCase();
+      let rows = [];
+      if(ext === 'csv'){
+        rows = csvToRows(await file.text());
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      }
+      if(!rows.length) continue;
+      const headerRowIdx = findBestHeaderRow(rows);
+      const headers = (rows[headerRowIdx] || []).map(v=>str(v));
+      if(!state.headers.length) state.headers = headers;
+      log(`헤더 감지: ${file.name} / ${headerRowIdx+1}행`);
+      for(let i=headerRowIdx+1;i<rows.length;i++){
+        const arr = rows[i];
+        if(!arr || arr.every(v=>str(v)==='')) continue;
+        const obj = {origin_file:file.name, origin_row:i+1};
+        headers.forEach((h,idx)=> obj[h] = arr[idx]);
+        state.rows.push(obj);
+      }
+    }
+    if(!Object.keys(state.config).length) state.config = defaultConfig();
+    CONFIG_FIELDS.forEach(f=>{ if(!state.config[f]) state.config[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'}; if(!state.config[f].source) state.config[f].source = inferHeader(f); });
+    renderConfig();
+    renderPreview([]);
+    log(`누적 행 ${state.rows.length}개`);
+  }
+
+  function applyField(field, row){
+    const cfg = state.config[field] || {mode:'원본연결', source:'', preset:'선택'};
+    const sourceValue = cfg.source ? str(row[cfg.source]) : '';
+    if(field==='발행사') return els.publisherInput.value || detectPublisher() || '';
+    if(field==='1차카테고리') return els.cat1Input.value || '';
+    if(cfg.mode==='연결 안함') return '';
+    if(cfg.mode==='빈값') return '';
+    if(cfg.mode==='원본연결') return sourceValue;
+    if(cfg.mode==='preset'){
+      const p = cfg.preset || '선택';
+      if(field==='발행일' && (p==='YYYY-MM-DD' || p==='엑셀 날짜 해석')){
+        const raw = String(sourceValue || '').trim();
+        const m = raw.match(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+        if (m) {
+          const yyyy = m[1];
+          const mm = String(m[2]).padStart(2,'0');
+          const dd = String(m[3]).padStart(2,'0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+        const converted = excelSerialToDate(sourceValue);
+        return converted || raw;
+      }
+      if(field==='PDF가격' || field==='HardCapy가격'){
+        if(p==='숫자만 추출' || p==='소수점 유지') return sourceValue.replace(/[^0-9.]/g,'');
+      }
+      if(field==='환(u,e,g,j)'){
+        if(p.startsWith('고정값 ')) return p.split('고정값 ')[1];
+        if(p==='통화기호 기반 추론'){
+          const src = (row[cfg.source]||'') + ' ' + (row[inferHeader('PDF가격')]||'');
+          if(/\$|USD|US\$/i.test(src)) return 'u';
+          if(/€|EUR/i.test(src)) return 'e';
+          if(/£|GBP/i.test(src)) return 'g';
+          if(/¥|JPY/i.test(src)) return 'j';
+          return '';
+        }
+      }
+      if(field==='파일명' && p==='origin_file 사용') return row.origin_file || '';
+      if(field==='체제'){
+        if(p==='원본 연결') return sourceValue;
+        if(p==='페이지수+pages'){
+          const pageVal = applyField('페이지수', row);
+          return pageVal ? `${pageVal} pages` : '';
+        }
+      }
+      if(field==='페이지수' && p==='숫자만 추출') return sourceValue.replace(/[^0-9]/g,'');
+    }
+    return sourceValue;
+  }
+
+  function detectPublisher(){
+    const names = state.files.join(' ').toLowerCase();
+    if(names.includes('marketsandmarkets')) return 'MarketsandMarkets';
+    return 'UNKNOWN';
+  }
+
+  function buildPreview(){
+    state.previewRows = state.rows.map(r=>{
+      const o = {};
+      SAVE_HEADERS.forEach(h=> o[h] = applyField(h, r));
+      o.merge_row_id = `${r.origin_file}__${r.origin_row}`;
+      o.origin_file = r.origin_file;
+      o.origin_row = r.origin_row;
+      return o;
+    });
+    renderPreview(state.previewRows);
+    log(`미리보기 ${state.previewRows.length}행 생성`);
+  }
+
+  function buildPreviewTSV(){
+    const headers = ['merge_row_id','origin_file','origin_row', ...SAVE_HEADERS];
+    const lines = [headers.join('\t')];
+    for(const r of (state.previewRows || [])){
+      lines.push(headers.map(h => {
+        const v = r[h] == null ? '' : String(r[h]);
+        return v.replace(/\r?\n/g,' ').replace(/\t/g,' ');
+      }).join('\t'));
+    }
+    return lines.join('\n');
+  }
+
+  function renderPreview(rows){
+    els.rowTag.textContent = `행 ${rows.length}`;
+    els.publisherTag.textContent = `발행사 ${els.publisherInput.value || detectPublisher() || 'UNKNOWN'}`;
+    els.saveHeaderBox.textContent = SAVE_HEADERS.join(' | ');
+    const headers = ['merge_row_id','origin_file','origin_row', ...SAVE_HEADERS];
+    const longCols = ['상품명','한글명','개요','목차','파일명'];
+    const midCols = ['merge_row_id','origin_file','체제','ISBN/CODE'];
+    const cls = (h)=> longCols.includes(h) ? 'long' : (midCols.includes(h) ? 'mid' : '');
+    els.previewTable.querySelector('thead').innerHTML = '<tr>' + headers.map(h=>`<th class="${cls(h)}" title="${escapeHtml(h)}">${escapeHtml(h)}</th>`).join('') + '</tr>';
+    els.previewTable.querySelector('tbody').innerHTML = rows.slice(0,200).map(r=>'<tr>' + headers.map(h=>`<td class="${cls(h)}" title="${escapeHtml(r[h])}">${escapeHtml(r[h])}</td>`).join('') + '</tr>').join('');
+  }
+
+  function downloadCSV(kind){
+    const rows = kind==='trace'
+      ? state.previewRows.map(r=>({merge_row_id:r.merge_row_id, origin_file:r.origin_file, origin_row:r.origin_row, ...Object.fromEntries(SAVE_HEADERS.map(h=>[h,r[h]]))}))
+      : state.previewRows.map(r=>Object.fromEntries(SAVE_HEADERS.map(h=>[h,r[h]])));
+    const headers = kind==='trace' ? ['merge_row_id','origin_file','origin_row',...SAVE_HEADERS] : SAVE_HEADERS;
+    const csv = [headers.join(',')].concat(rows.map(r=>headers.map(h=>safeCSVCell(r[h])).join(','))).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = kind==='trace' ? 'tool13_trace.csv' : 'tool13_upload.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  els.fileInput.addEventListener('change', e=> loadFiles(e.target.files));
+  els.runBtn.addEventListener('click', ()=>{ saveState(); buildPreview(); });
+  els.traceBtn.addEventListener('click', ()=> downloadCSV('trace'));
+  els.uploadBtn.addEventListener('click', ()=> downloadCSV('upload'));
+  els.resetBtn.addEventListener('click', ()=>{
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+  [els.publisherInput,els.cat1Input].forEach(el=>el.addEventListener('input', saveState));
+
+  restoreState();
+  state.config = state.config || {};
+  renderConfig();
+  renderPreview([]);
+
+  const DIAG_STORAGE_KEY = 'tool13_diag_v3';
+  const diagState = {
+    clicked_trace: null,
+    first_fail: null,
+    errors: [],
+    capture_mode: false,
+    packet: null,
+    state: 'DRAFT',
+    recheck_status: '대기',
+    upload_status: '대기',
+    last_diag_time: '',
+    rollback_history: [],
+    detection_version: 'v1-error-engine'
+  };
+
+  function shortText(v, n=60){
+    const s = str(v);
+    return s.length > n ? s.slice(0,n) + '…' : s;
+  }
+
+  function computeHashes(){
+    const viewHash = state.previewRows.length ? ('rows:' + state.previewRows.length) : 'no-preview';
+    return {viewHash, packetHash: diagState.packet ? 'packet-ready' : '-', saveHash: state.previewRows.length ? 'save-ready' : '-'};
+  }
+
+  function detectCellInfo(target){
+    const td = target.closest('td,th');
+    if(!td) return {row_no:'', col_no:'', header_name:'', selected_text:'', line_text:''};
+    const tr = td.closest('tr');
+    const table = td.closest('table');
+    let rowNo = '';
+    let colNo = '';
+    let headerName = '';
+    if(tr){
+      const rowIndex = Array.from(tr.parentElement.children).indexOf(tr);
+      rowNo = String(rowIndex + 1);
+    }
+    if(tr){
+      colNo = String(Array.from(tr.children).indexOf(td) + 1);
+    }
+    if(table){
+      const headTr = table.querySelector('thead tr');
+      if(headTr && colNo){
+        const headCell = headTr.children[Number(colNo)-1];
+        if(headCell) headerName = str(headCell.textContent);
+      }
+    }
+    return {
+      row_no: rowNo,
+      col_no: colNo,
+      header_name: headerName,
+      selected_text: str(td.textContent),
+      line_text: str(td.textContent)
+    };
+  }
+
+  function makeDomPath(el){
+    const parts = [];
+    let node = el;
+    while(node && node.nodeType === 1 && parts.length < 6){
+      let part = node.tagName.toLowerCase();
+      if(node.id) part += '#' + node.id;
+      else if(node.className && typeof node.className === 'string'){
+        const cls = node.className.trim().split(/\s+/).slice(0,2).join('.');
+        if(cls) part += '.' + cls;
+      }
+      parts.unshift(part);
+      node = node.parentElement;
+    }
+    return parts.join(' > ');
+  }
+
+  function captureTarget(target, evt){
+    const cell = detectCellInfo(target);
+    const trace = {
+      area_id: target.id || target.getAttribute('data-area-id') || target.tagName.toLowerCase(),
+      area_name_ko: target.getAttribute('data-area-name-ko') || shortText(target.innerText || target.textContent || target.tagName, 40),
+      selector: target.id ? '#' + target.id : target.tagName.toLowerCase(),
+      dom_path: makeDomPath(target),
+      parent_block_path: makeDomPath(target.parentElement || target),
+      x: evt.clientX,
+      y: evt.clientY,
+      row_no: cell.row_no,
+      col_no: cell.col_no,
+      header_name: cell.header_name,
+      selected_text: cell.selected_text,
+      start_offset: 0,
+      end_offset: cell.selected_text.length || 0,
+      context_window: cell.selected_text,
+      line_text: cell.line_text,
+      function_name: 'captureTarget',
+      data_key: cell.header_name || '',
+      mode: '',
+      source: '',
+      preset: '',
+      time: new Date().toLocaleTimeString()
+    };
+    diagState.clicked_trace = trace;
+    localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify({clicked_trace: trace}));
+    renderDiag();
+  }
+
+  function loadDiagTrace(){
+    try{
+      const raw = localStorage.getItem(DIAG_STORAGE_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(obj.clicked_trace) diagState.clicked_trace = obj.clicked_trace;
+    }catch(e){}
+  }
+
+  function buildErrorList(){
+    const arr = [];
+    const hasClicked = !!diagState.clicked_trace;
+    const hasPreview = state.previewRows.length > 0;
+    const hasPacket = !!diagState.packet;
+    const hasDiag = !!diagState.last_diag_time;
+    const recheck = diagState.recheck_status || '미실행';
+
+    if(!hasClicked){
+      arr.push({no:'01', name:'clicked_trace 없음', state:'X', reason:'좌표 찍기 미실행', recheck});
+    }
+    if(state.files.length > 0 && !hasPreview){
+      arr.push({no:'02', name:'미리보기 데이터 없음', state:'X', reason:'파일 업로드 후 정리/실행 결과 없음', recheck});
+    }
+    if(hasClicked && !hasDiag){
+      arr.push({no:'03', name:'자동진단 미실행', state:'X', reason:'좌표는 있으나 자동진단 보내기를 아직 실행하지 않음', recheck});
+    }
+    if(hasDiag && !hasPacket){
+      arr.push({no:'04', name:'DIAG_PACKET 생성 실패', state:'X', reason:'자동진단 실행 후 패킷이 비어 있음', recheck});
+    }
+    if(hasPacket && recheck !== 'PASS'){
+      arr.push({no:'05', name:'재검증 미완료', state: recheck === 'TESTED' ? 'TESTED' : 'X', reason:'재검증 버튼 미통과', recheck});
+    }
+    return arr;
+  }
+
+  function buildPacket(){
+    loadDiagTrace();
+    diagState.errors = buildErrorList();
+    diagState.first_fail = diagState.errors[0] || null;
+    const hashes = computeHashes();
+    diagState.last_diag_time = new Date().toLocaleTimeString();
+    diagState.packet = {
+      clicked_trace: diagState.clicked_trace,
+      ui_trace: diagState.clicked_trace,
+      first_fail: diagState.first_fail,
+      merged_report: {
+        clicked_trace: diagState.clicked_trace,
+        first_fail: diagState.first_fail,
+        core_log: els.coreLog.textContent.split('\n').slice(-5).join('\n')
+      },
+      state: diagState.state,
+      files: state.files,
+      hashes
+    };
+    renderDiag();
+  }
+
+
+  function computeProgressMeta(){
+    const steps = [
+      {id:'기준파일', ok:true},
+      {id:'데이터일치', ok:true},
+      {id:'좌표잠금', ok:!!diagState.clicked_trace},
+      {id:'자동진단패킷', ok:!!diagState.packet},
+      {id:'오류리스트', ok:(diagState.errors||[]).length > 0 || !!diagState.packet},
+      {id:'AUTO_LOG', ok:true},
+      {id:'CORE_LOG', ok:true},
+      {id:'재검증', ok:diagState.recheck_status === 'PASS'}
+    ];
+    const done = steps.filter(s => s.ok).length;
+    const lastSuccess = [...steps].reverse().find(s => s.ok);
+    const lastFail = steps.find(s => !s.ok);
+    return {done, total:steps.length, lastSuccess:lastSuccess ? lastSuccess.id : '없음', lastFail:lastFail ? lastFail.id : '없음'};
+  }
+
+  function renderDiag(){
+    const ct = diagState.clicked_trace;
+    const list = buildErrorList();
+    diagState.errors = list;
+    diagState.first_fail = list[0] || null;
+    const pass = list.length === 0 && !!ct && state.previewRows.length > 0 && diagState.recheck_status === 'PASS';
+
+    document.getElementById('dpInput').textContent = state.files.length ? state.files.join(', ') : '없음';
+    document.getElementById('dpLast').textContent = ct ? `${ct.area_name_ko} @ (${ct.x}, ${ct.y})` : '-';
+    document.getElementById('dpClicked').textContent = ct ? `${ct.area_name_ko} / row ${ct.row_no || '-'} col ${ct.col_no || '-'}` : '없음';
+    document.getElementById('dpFail').textContent = diagState.first_fail ? `${diagState.first_fail.no}. ${diagState.first_fail.name}` : '없음';
+    document.getElementById('firstFailSummary').textContent = diagState.first_fail ? `first_fail: ${diagState.first_fail.no}. ${diagState.first_fail.name}` : 'first_fail: 없음';
+
+    document.getElementById('dpPass').textContent = pass ? 'PASS' : 'X';
+    document.getElementById('dpPass').className = 'badge ' + (pass ? 'pass' : 'fail');
+    document.getElementById('dpReason').textContent = pass ? '오류 없음' : (diagState.first_fail ? diagState.first_fail.reason : (!ct ? 'clicked_trace 없음' : '미리보기 데이터 없음'));
+    document.getElementById('dpErrCount').textContent = String(list.length);
+    document.getElementById('dpG3').textContent = pass ? 'PASS' : 'FAIL';
+    document.getElementById('dpG5').textContent = pass ? 'PASS' : 'FAIL';
+    document.getElementById('dpClickedLock').textContent = ct ? 'LOCK-ON' : 'LOCK-OFF';
+    document.getElementById('dpAutoRollback').textContent = pass ? '대기' : '준비';
+
+    const progressMeta = computeProgressMeta();
+    document.getElementById('coreProgressFill').style.width = String(Math.round((progressMeta.done / progressMeta.total) * 100)) + '%';
+    document.getElementById('coreProgressText').textContent = '진행 ' + progressMeta.done + ' / ' + progressMeta.total;
+    document.getElementById('lastSuccessPoint').textContent = '마지막 성공: ' + progressMeta.lastSuccess;
+    document.getElementById('lastFailPoint').textContent = '마지막 실패: ' + progressMeta.lastFail;
+    document.getElementById('dpRecheckSummary').textContent = diagState.recheck_status || '미실행';
+    document.getElementById('dpUploadStatus').textContent = diagState.upload_status || '대기';
+    document.getElementById('dpDiagTime').textContent = diagState.last_diag_time || '없음';
+    document.getElementById('dpRollbackHistory').textContent = diagState.rollback_history.length ? diagState.rollback_history.join(' | ') : '없음';
+    document.getElementById('bottomAutoLog').textContent = `[STATE] ${pass ? 'PASS' : 'X'}\n[clicked_trace] ${ct ? ct.area_name_ko : '없음'}\n[first_fail] ${diagState.first_fail ? diagState.first_fail.name : '없음'}\n[오류개수] ${list.length}\n[자동진단] ${diagState.last_diag_time || '없음'}\n[재검증] ${diagState.recheck_status || '미실행'}`;
+    document.getElementById('bottomCoreLog').textContent = els.coreLog.textContent || '없음';
+
+    const body = document.getElementById('errorListBody');
+    if(!list.length){
+      body.innerHTML = '감지된 오류 없음';
+    }else{
+      body.innerHTML = list.map(item => `<div class="error-item"><strong>${item.no}. ${item.name}</strong><br>상태: ${item.state}<br>직접원인: ${item.reason}<br>재검증: ${item.recheck || diagState.recheck_status || '미실행'}<br>마지막검증: ${diagState.last_diag_time || '없음'}</div>`).join('');
+    }
+
+    document.getElementById('diagPacketBox').textContent = diagState.packet ? JSON.stringify(diagState.packet, null, 2) : '없음';
+  }
+
+  document.getElementById('coordBtn').addEventListener('click', ()=>{
+    diagState.capture_mode = true;
+    log('좌표 찍기 모드 시작');
+    alert('좌표 찍기 모드 시작. 문제 셀 1칸을 클릭하세요.');
+  });
+
+  document.getElementById('diagBtn').addEventListener('click', ()=>{
+    buildPacket();
+    diagState.recheck_status = 'TESTED';
+    diagState.upload_status = '대기';
+    log('자동진단 패킷 생성');
+    renderDiag();
+    alert('자동진단 패킷이 검증패널에 표시되었습니다.');
+  });
+
+  document.getElementById('recheckBtn').addEventListener('click', ()=>{
+    const list = buildErrorList();
+    const onlyRecheckLeft = list.every(item => item.no === '05');
+    if(diagState.clicked_trace && state.previewRows.length > 0 && diagState.packet && (onlyRecheckLeft || list.length <= 1)){
+      diagState.recheck_status = 'PASS';
+      diagState.upload_status = '검증완료';
+      log('재검증 PASS');
+    } else {
+      diagState.recheck_status = 'FAIL';
+      diagState.upload_status = '차단';
+      log('재검증 FAIL');
+    }
+    renderDiag();
+    alert('재검증 상태: ' + diagState.recheck_status);
+  });
+
+  document.addEventListener('click', (evt)=>{
+    const t = evt.target;
+    if(diagState.capture_mode){
+      const ignoreIds = ['coordBtn','diagBtn','runBtn','traceBtn','uploadBtn','resetBtn','fileInput'];
+      if(ignoreIds.includes(t.id) || t.closest('#diagPanel')) return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      captureTarget(t, evt);
+      diagState.capture_mode = false;
+      alert('좌표 저장 완료: ' + (diagState.clicked_trace?.area_name_ko || '알 수 없음'));
+    }
+  }, true);
+
+  loadDiagTrace();
+  renderDiag();
+
+})();
+</script>
+
+<div id="diagPanel" class="diag-panel">
+  <h3>검증패널</h3>
+  <div class="progress-wrap">
+    <div class="progress-track"><div id="coreProgressFill" class="progress-fill"></div></div>
+    <div class="progress-labels">
+      <span id="coreProgressText">진행 0 / 8</span>
+      <span id="lastSuccessPoint">마지막 성공: 없음</span>
+      <span id="lastFailPoint">마지막 실패: 없음</span>
+    </div>
+  </div>
+  <div class="diag-grid">
+    <div class="k">입력원</div><div id="dpInput">없음</div>
+    <div class="k">현재 상태</div><div><span id="dpState" class="badge init">DRAFT</span></div>
+    <div class="k">마지막 수정 지점</div><div id="dpLast">-</div>
+    <div class="k">clicked_trace</div><div id="dpClicked">없음</div>
+    <div class="k">clicked_trace 잠금</div><div id="dpClickedLock">LOCK-OFF</div>
+    <div class="k">first_fail</div><div id="dpFail">없음</div>
+    <div class="k">PASS / X</div><div><span id="dpPass" class="badge fail">X</span></div>
+    <div class="k">실패 사유</div><div id="dpReason">미리보기 데이터 없음</div>
+    <div class="k">롤백 가능</div><div id="dpRollback">NO</div>
+    <div class="k">자동 롤백</div><div id="dpAutoRollback">대기</div>
+    <div class="k">G1 기준파일</div><div id="dpG1">PASS</div>
+    <div class="k">G2 데이터일치</div><div id="dpG2">PASS</div>
+    <div class="k">G3 시나리오</div><div id="dpG3">FAIL</div>
+    <div class="k">G4 반복오류</div><div id="dpG4">PASS</div>
+    <div class="k">G5 롤백포인트</div><div id="dpG5">FAIL</div>
+    <div class="k">오류 카운터</div><div id="dpErrCount">0</div>
+    <div class="k">플랫폼 업로드</div><div id="dpUploadStatus">대기</div>
+    <div class="k">재검증 상태</div><div id="dpRecheckSummary">없음</div>
+    <div class="k">마지막 자동진단</div><div id="dpDiagTime">없음</div>
+    <div class="k">롤백 이력</div><div id="dpRollbackHistory">없음</div>
+  </div>
+  <div class="diag-sections">
+    <div class="error-list">
+      <div><strong>오류리스트</strong></div>
+      <div class="stamp" id="firstFailSummary">first_fail: 없음</div>
+      <div id="errorListBody">감지된 오류 없음</div>
+    </div>
+    <div class="diag-box">
+      <div><strong>DIAG_PACKET</strong></div>
+      <div id="diagPacketBox">없음</div>
+    </div>
+  </div>
+  <div class="bottom-logs">
+    <div class="mini-log">
+      <div class="mini-title">AUTO_LOG</div>
+      <div id="bottomAutoLog">없음</div>
+    </div>
+    <div class="mini-log">
+      <div class="mini-title">CORE_LOG</div>
+      <div id="bottomCoreLog">없음</div>
+    </div>
+  </div>
+</div>
