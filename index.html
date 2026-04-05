@@ -597,9 +597,7 @@
     upload_status: '대기',
     last_diag_time: '',
     rollback_history: [],
-    detection_version: 'v1-error-engine',
-    clicked_trace_locked: false,
-    last_locked_trace: null
+    detection_version: 'v1-error-engine'
   };
 
   function shortText(v, n=60){
@@ -684,10 +682,8 @@
       preset: '',
       time: new Date().toLocaleTimeString()
     };
-    diagState.clicked_trace = trace;
-    diagState.last_locked_trace = trace;
-    diagState.clicked_trace_locked = true;
-    localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify({clicked_trace: trace, last_locked_trace: trace, clicked_trace_locked: true}));
+    diagState.clicked_trace = trace; _pushClickTrace(trace);
+    localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify({clicked_trace: trace}));
     renderDiag();
   }
 
@@ -697,8 +693,6 @@
       if(!raw) return;
       const obj = JSON.parse(raw);
       if(obj.clicked_trace) diagState.clicked_trace = obj.clicked_trace;
-      if(obj.last_locked_trace) diagState.last_locked_trace = obj.last_locked_trace;
-      if(typeof obj.clicked_trace_locked === 'boolean') diagState.clicked_trace_locked = obj.clicked_trace_locked;
     }catch(e){}
   }
 
@@ -769,8 +763,7 @@
   }
 
   function renderDiag(){
-    const ct = diagState.last_locked_trace || diagState.clicked_trace;
-    const preservedTrace = diagState.last_locked_trace || diagState.clicked_trace;
+    const ct = diagState.clicked_trace;
     const list = buildErrorList();
     diagState.errors = list;
     diagState.first_fail = list[0] || null;
@@ -779,7 +772,7 @@
     document.getElementById('dpInput').textContent = state.files.length ? state.files.join(', ') : '없음';
     document.getElementById('dpLast').textContent = ct ? `${ct.area_name_ko} @ (${ct.x}, ${ct.y})` : '-';
     document.getElementById('dpClicked').textContent = ct ? `${ct.area_name_ko} / row ${ct.row_no || '-'} col ${ct.col_no || '-'}` : '없음';
-    document.getElementById('dpFail').textContent = diagState.first_fail ? `${diagState.first_fail.no}. ${diagState.first_fail.name}` : '없음';
+    document.getElementById('dpFail').textContent = diagState.first_fail ? `${diagState.first_fail.no ? diagState.first_fail.no + '. ' : ''}${diagState.first_fail.name}` : '없음';
     document.getElementById('firstFailSummary').textContent = diagState.first_fail ? `first_fail: ${diagState.first_fail.no}. ${diagState.first_fail.name}` : 'first_fail: 없음';
 
     document.getElementById('dpPass').textContent = pass ? 'PASS' : 'X';
@@ -788,7 +781,7 @@
     document.getElementById('dpErrCount').textContent = String(list.length);
     document.getElementById('dpG3').textContent = pass ? 'PASS' : 'FAIL';
     document.getElementById('dpG5').textContent = pass ? 'PASS' : 'FAIL';
-    document.getElementById('dpClickedLock').textContent = diagState.clicked_trace_locked && ct ? 'LOCK-ON' : 'LOCK-OFF';
+    document.getElementById('dpClickedLock').textContent = ct ? 'LOCK-ON' : 'LOCK-OFF';
     document.getElementById('dpAutoRollback').textContent = pass ? '대기' : '준비';
 
     const progressMeta = computeProgressMeta();
@@ -800,7 +793,7 @@
     document.getElementById('dpUploadStatus').textContent = diagState.upload_status || '대기';
     document.getElementById('dpDiagTime').textContent = diagState.last_diag_time || '없음';
     document.getElementById('dpRollbackHistory').textContent = diagState.rollback_history.length ? diagState.rollback_history.join(' | ') : '없음';
-    document.getElementById('bottomAutoLog').textContent = `[STATE] ${pass ? 'PASS' : 'X'}\n[clicked_trace] ${ct ? ct.area_name_ko : '없음'}\n[clicked_trace_lock] ${diagState.clicked_trace_locked && ct ? 'LOCK-ON' : 'LOCK-OFF'}\n[first_fail] ${diagState.first_fail ? diagState.first_fail.name : '없음'}\n[오류개수] ${list.length}\n[자동진단] ${diagState.last_diag_time || '없음'}\n[재검증] ${diagState.recheck_status || '미실행'}`;
+    document.getElementById('bottomAutoLog').textContent = `[STATE] ${pass ? 'PASS' : 'X'}\n[clicked_trace] ${ct ? ct.area_name_ko : '없음'}\n[first_fail] ${diagState.first_fail ? diagState.first_fail.name : '없음'}\n[오류개수] ${list.length}\n[자동진단] ${diagState.last_diag_time || '없음'}\n[재검증] ${diagState.recheck_status || '미실행'}`;
     document.getElementById('bottomCoreLog').textContent = els.coreLog.textContent || '없음';
 
     const body = document.getElementById('errorListBody');
@@ -820,9 +813,15 @@
   });
 
   document.getElementById('diagBtn').addEventListener('click', ()=>{
-    const preservedTrace = diagState.last_locked_trace || diagState.clicked_trace;
     buildPacket();
-    if (preservedTrace) { diagState.clicked_trace = preservedTrace; diagState.last_locked_trace = preservedTrace; diagState.clicked_trace_locked = true; }
+    // mismatch rule: if last two clicked area names differ -> set first_fail
+    try{
+      const a = window._clickSeq[window._clickSeq.length-2];
+      const b = window._clickSeq[window._clickSeq.length-1];
+      if(a && b && a.area_name_ko && b.area_name_ko && a.area_name_ko !== b.area_name_ko){
+        diagState.first_fail = {no:'MISMATCH', name:'불일치', reason:'좌/우 항목 불일치'};
+      }
+    }catch(e){}
     diagState.recheck_status = 'TESTED';
     diagState.upload_status = '대기';
     log('자동진단 패킷 생성');
@@ -842,7 +841,6 @@
       diagState.upload_status = '차단';
       log('재검증 FAIL');
     }
-    if (preservedTrace) { diagState.clicked_trace = preservedTrace; diagState.last_locked_trace = preservedTrace; diagState.clicked_trace_locked = true; }
     renderDiag();
     alert('재검증 상태: ' + diagState.recheck_status);
   });
@@ -850,7 +848,7 @@
   document.addEventListener('click', (evt)=>{
     const t = evt.target;
     if(diagState.capture_mode){
-      const ignoreIds = ['coordBtn','diagBtn','recheckBtn','runBtn','traceBtn','uploadBtn','resetBtn','backupBtn','fileInput'];
+      const ignoreIds = ['coordBtn','diagBtn','runBtn','traceBtn','uploadBtn','resetBtn','fileInput'];
       if(ignoreIds.includes(t.id) || t.closest('#diagPanel')) return;
       evt.preventDefault();
       evt.stopPropagation();
@@ -873,7 +871,7 @@
   <div class="fixed-error-title">고정 오류리스트</div>
   <div class="fixed-error-note">삭제 금지 / 상태만 X → TESTED → PASS 변경</div>
   <div class="fixed-error-grid" id="fixedErrorListBody">
-    <div class="fixed-error-card"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: PASS / 직접원인: 자동진단·이벤트 충돌 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 1차 잠금 완료</div></div>
+    <div class="fixed-error-card"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 자동진단·이벤트 충돌</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
 <div class="fixed-error-card"><strong>02. focusin/click 이벤트 좌표 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 중복 이벤트 핸들러</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
 <div class="fixed-error-card"><strong>03. first_fail만 보고되고 실제 좌표 누락</strong><div class="fixed-error-meta">상태: X / 직접원인: 진단 우선순위 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
 <div class="fixed-error-card"><strong>04. 통합설정 클릭 시 다른 항목으로 변경</strong><div class="fixed-error-meta">상태: X / 직접원인: DOM 탐색 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
