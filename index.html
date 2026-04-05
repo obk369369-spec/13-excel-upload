@@ -100,9 +100,14 @@
 
   @media (max-width:1100px){ .layout{grid-template-columns:1fr} .grid2{grid-template-columns:1fr} }
 
-  .fixed-error-item{border-top:1px dashed #d9dee8; padding-top:6px; margin-top:6px; font-size:11px}
-  .fixed-error-item:first-child{border-top:none; padding-top:0; margin-top:0}
+  .fixed-error-wrap{margin-top:8px;border:1px solid #d9dee8;border-radius:8px;padding:8px;background:#fff}
+  .fixed-error-title{font-weight:bold;margin-bottom:6px}
+  .fixed-error-note{font-size:11px;color:#6b7280;margin-bottom:6px}
+  .fixed-error-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .fixed-error-card{border:1px solid #e5e7eb;border-radius:8px;padding:6px;background:#fff;font-size:10px;line-height:1.35}
+  .fixed-error-card strong{display:block;margin-bottom:2px}
   .fixed-error-meta{color:#6b7280}
+
 </style>
 </head>
 <body>
@@ -853,6 +858,40 @@
 
 <div id="diagPanel" class="diag-panel">
   <h3>검증패널</h3>
+
+<div class="fixed-error-wrap" id="fixedErrorListWrap">
+  <div class="fixed-error-title">고정 오류리스트</div>
+  <div class="fixed-error-note">삭제 금지 / 상태만 X → TESTED → PASS 변경</div>
+  <div class="fixed-error-grid" id="fixedErrorListBody">
+    <div class="fixed-error-card"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 자동진단·이벤트 충돌</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>02. focusin/click 이벤트 좌표 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 중복 이벤트 핸들러</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>03. first_fail만 보고되고 실제 좌표 누락</strong><div class="fixed-error-meta">상태: X / 직접원인: 진단 우선순위 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>04. 통합설정 클릭 시 다른 항목으로 변경</strong><div class="fixed-error-meta">상태: X / 직접원인: DOM 탐색 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>05. 체제 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 컬럼 매핑 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>06. 목차 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 셀 인덱스 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>07. 개요 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 셀 추적 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>08. ui_trace/clicked_trace 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 동기화 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>09. DIAG_PACKET 화면 vs JSON 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 패킷 생성 로직 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>10. error_report vs DIAG_PACKET 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 데이터 구조 분리</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>11. PASS 상태 오표시</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 판정 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>12. clicked_trace 저장 실패</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 덮어쓰기</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>13. first_fail이 clicked_trace 덮음</strong><div class="fixed-error-meta">상태: X / 직접원인: 우선순위 역전</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>14. 기준 버튼/파일 변경 시 구조 흔들림</strong><div class="fixed-error-meta">상태: X / 직접원인: 기준 고정 미흡</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>15. 중복 이벤트로 좌표 재덮임</strong><div class="fixed-error-meta">상태: X / 직접원인: 이벤트 중복 등록</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>16. 수정 후 즉시 재발</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 저장 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>17. 긴 필드 텍스트 수집 실패</strong><div class="fixed-error-meta">상태: X / 직접원인: text extraction 부족</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>18. 미리보기/설정/패킷 값 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 데이터 충돌</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>19. view/packet/download 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 출력 경로 분리</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>20. 재검증 상태 전이 실패</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 머신 미구현</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>21. 자동 롤백 기록 없음</strong><div class="fixed-error-meta">상태: X / 직접원인: rollback 로직 미연결</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>22. 오류리스트 누적 안됨</strong><div class="fixed-error-meta">상태: X / 직접원인: 리스트 저장 구조 없음</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>23. 다중파일 누적 후 미리보기 소실</strong><div class="fixed-error-meta">상태: X / 직접원인: 데이터 누적 처리 오류</div><div class="fixed-error-meta">영역: 파일입력→정리/실행→미리보기 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>24. 기능형 오류를 단일 좌표로 처리</strong><div class="fixed-error-meta">상태: X / 직접원인: 좌표 구조 한계</div><div class="fixed-error-meta">영역: 다중 구역 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>25. 패널 정보 가시성 부족</strong><div class="fixed-error-meta">상태: X / 직접원인: UI 배치 문제</div><div class="fixed-error-meta">영역: 패널 영역 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+<div class="fixed-error-card"><strong>26. 재검증 없이 PASS 처리</strong><div class="fixed-error-meta">상태: X / 직접원인: 검증 단계 누락</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
+  </div>
+</div>
+
   <div class="progress-wrap">
     <div class="progress-track"><div id="coreProgressFill" class="progress-fill"></div></div>
     <div class="progress-labels">
@@ -884,40 +923,6 @@
     <div class="k">롤백 이력</div><div id="dpRollbackHistory">없음</div>
   </div>
   <div class="diag-sections">
-    
-<div class="error-list" id="fixedErrorListWrap">
-  <div><strong>고정 오류리스트</strong></div>
-  <div class="small" style="margin:4px 0 8px 0;">삭제 금지 / 상태만 X → TESTED → PASS 변경</div>
-  <div id="fixedErrorListBody">
-    <div class="fixed-error-item"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 자동진단·이벤트 충돌</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>02. focusin/click 이벤트 좌표 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 중복 이벤트 핸들러</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>03. first_fail만 보고되고 실제 좌표 누락</strong><div class="fixed-error-meta">상태: X / 직접원인: 진단 우선순위 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>04. 통합설정 클릭 시 다른 항목으로 변경</strong><div class="fixed-error-meta">상태: X / 직접원인: DOM 탐색 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>05. 체제 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 컬럼 매핑 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>06. 목차 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 셀 인덱스 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>07. 개요 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 셀 추적 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>08. ui_trace/clicked_trace 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 동기화 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>09. DIAG_PACKET 화면 vs JSON 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 패킷 생성 로직 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>10. error_report vs DIAG_PACKET 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 데이터 구조 분리</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>11. PASS 상태 오표시</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 판정 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>12. clicked_trace 저장 실패</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 덮어쓰기</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>13. first_fail이 clicked_trace 덮음</strong><div class="fixed-error-meta">상태: X / 직접원인: 우선순위 역전</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>14. 기준 버튼/파일 변경 시 구조 흔들림</strong><div class="fixed-error-meta">상태: X / 직접원인: 기준 고정 미흡</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>15. 중복 이벤트로 좌표 재덮임</strong><div class="fixed-error-meta">상태: X / 직접원인: 이벤트 중복 등록</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>16. 수정 후 즉시 재발</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 저장 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>17. 긴 필드 텍스트 수집 실패</strong><div class="fixed-error-meta">상태: X / 직접원인: text extraction 부족</div><div class="fixed-error-meta">영역: 단일 셀 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>18. 미리보기/설정/패킷 값 덮어쓰기</strong><div class="fixed-error-meta">상태: X / 직접원인: 데이터 충돌</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>19. view/packet/download 불일치</strong><div class="fixed-error-meta">상태: X / 직접원인: 출력 경로 분리</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>20. 재검증 상태 전이 실패</strong><div class="fixed-error-meta">상태: X / 직접원인: 상태 머신 미구현</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>21. 자동 롤백 기록 없음</strong><div class="fixed-error-meta">상태: X / 직접원인: rollback 로직 미연결</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>22. 오류리스트 누적 안됨</strong><div class="fixed-error-meta">상태: X / 직접원인: 리스트 저장 구조 없음</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>23. 다중파일 누적 후 미리보기 소실</strong><div class="fixed-error-meta">상태: X / 직접원인: 데이터 누적 처리 오류</div><div class="fixed-error-meta">영역: 파일입력→정리/실행→미리보기 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>24. 기능형 오류를 단일 좌표로 처리</strong><div class="fixed-error-meta">상태: X / 직접원인: 좌표 구조 한계</div><div class="fixed-error-meta">영역: 다중 구역 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>25. 패널 정보 가시성 부족</strong><div class="fixed-error-meta">상태: X / 직접원인: UI 배치 문제</div><div class="fixed-error-meta">영역: 패널 영역 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-    <div class="fixed-error-item"><strong>26. 재검증 없이 PASS 처리</strong><div class="fixed-error-meta">상태: X / 직접원인: 검증 단계 누락</div><div class="fixed-error-meta">영역: 전체 구조 / 재발횟수: 0 / 마지막검증: 없음</div></div>
-  </div>
-</div>
-
     <div class="error-list">
       <div><strong>오류리스트</strong></div>
       <div class="stamp" id="firstFailSummary">first_fail: 없음</div>
