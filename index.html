@@ -110,6 +110,16 @@
   .status-pass{color:#166534;font-weight:bold}
   .status-tested{color:#92400e;font-weight:bold}
   .status-fail{color:#991b1b;font-weight:bold}
+
+  .fixed-error-summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px 0}
+  .fixed-error-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #d9dee8;background:#fff;font-size:14px;font-weight:800}
+  .fixed-error-pill.pass{color:#166534;border-color:#86efac;background:#f0fdf4}
+  .fixed-error-pill.fail{color:#991b1b;border-color:#fca5a5;background:#fef2f2}
+  .fixed-error-pill.tested{color:#92400e;border-color:#fcd34d;background:#fffbeb}
+  .fixed-error-card strong{font-size:14px;font-weight:800;margin-bottom:4px}
+  .fixed-error-card .state-line{font-size:13px;font-weight:800;margin-bottom:4px}
+  .fixed-error-card .state-line .status-pass,.fixed-error-card .state-line .status-fail,.fixed-error-card .state-line .status-tested{font-size:15px}
+
 </style>
 </head>
 <body>
@@ -129,12 +139,12 @@
   <div class="layout">
     <div class="panel">
       <div class="section">
-        <h3 style="display:none">통합 입력</h3>
-        <div class="grid2" style="display:none">
+        <h3>통합 입력</h3>
+        <div class="grid2">
           <div class="field"><label>발행사</label><input id="publisherInput" placeholder="발행사"></div>
           <div class="field"><label>전체 1차카테고리</label><input id="cat1Input" placeholder="1차카테고리"></div>
         </div>
-        <div class="small" style="margin-top:6px; display:none">선택은 저장된다. 원본연결 / 연결 안함 / 빈값 / preset만 사용한다.</div>
+        <div class="small" style="margin-top:6px;">선택은 저장된다. 원본연결 / 연결 안함 / 빈값 / preset만 사용한다.</div>
       </div>
 
       <div class="section">
@@ -471,13 +481,6 @@
   function escapeHtml(s){
     return str(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function previewText(v){
-    return str(v).replace(/\r?\n+/g,' ').replace(/\t+/g,' ').replace(/\s{2,}/g,' ').trim();
-  }
-  function downloadCellText(v, header){
-    const s = str(v).replace(/\r\n/g,'\n');
-    return s.replace(/\t+/g, ' ');
-  }
 
   function csvToRows(text){
     const rows=[]; let row=[], cur='', inQ=false;
@@ -618,12 +621,7 @@
     const midCols = ['merge_row_id','origin_file','체제','ISBN/CODE'];
     const cls = (h)=> longCols.includes(h) ? 'long' : (midCols.includes(h) ? 'mid' : '');
     els.previewTable.querySelector('thead').innerHTML = '<tr>' + headers.map(h=>`<th class="${cls(h)}" title="${escapeHtml(h)}">${escapeHtml(h)}</th>`).join('') + '</tr>';
-    els.previewTable.querySelector('tbody').innerHTML = rows.slice(0,200).map(r=>'<tr>' + headers.map(h=>{
-      const raw = r[h];
-      const view = longCols.includes(h) ? previewText(raw) : str(raw);
-      const title = str(raw);
-      return `<td class="${cls(h)}" title="${escapeHtml(title)}">${escapeHtml(view)}</td>`;
-    }).join('') + '</tr>').join('');
+    els.previewTable.querySelector('tbody').innerHTML = rows.slice(0,200).map(r=>'<tr>' + headers.map(h=>`<td class="${cls(h)}" title="${escapeHtml(r[h])}">${escapeHtml(r[h])}</td>`).join('') + '</tr>').join('');
   }
 
   function downloadCSV(kind){
@@ -636,37 +634,23 @@
           r.merge_row_id ?? '',
           r.origin_file ?? '',
           r.origin_row ?? '',
-          ...SAVE_HEADERS.map(h => downloadCellText(r[h], h))
+          ...SAVE_HEADERS.map(h => {
+            const v = r[h] == null ? '' : String(r[h]);
+            return v.replace(/\r?\n/g, ' ').replace(/\t/g, ' ');
+          })
         ])
       : state.previewRows.map(r =>
-          SAVE_HEADERS.map(h => downloadCellText(r[h], h))
+          SAVE_HEADERS.map(h => {
+            const v = r[h] == null ? '' : String(r[h]);
+            return v.replace(/\r?\n/g, ' ').replace(/\t/g, ' ');
+          })
         );
 
     const aoa = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for(let R = 1; R <= range.e.r; R++){
-      for(let C = 0; C <= range.e.c; C++){
-        const addr = XLSX.utils.encode_cell({r:R, c:C});
-        const cell = ws[addr];
-        if(!cell || typeof cell.v !== 'string') continue;
-        if(cell.v.indexOf('\n') >= 0){
-          cell.s = cell.s || {};
-          cell.s.alignment = Object.assign({}, cell.s.alignment || {}, {wrapText:true, vertical:'top'});
-        }
-      }
-    }
-
-    ws['!cols'] = headers.map(h => {
-      if(h === '개요' || h === '목차') return {wch:28};
-      if(h === '상품명' || h === '한글명' || h === '파일명') return {wch:18};
-      return {wch:12};
-    });
-
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, kind==='trace' ? 'trace' : 'upload');
-    XLSX.writeFile(wb, kind==='trace' ? 'tool13_trace.xlsx' : 'tool13_upload.xlsx', {cellStyles:true});
+    XLSX.writeFile(wb, kind==='trace' ? 'tool13_trace.xlsx' : 'tool13_upload.xlsx');
   }
 
   els.fileInput.addEventListener('change', e=> loadFiles(e.target.files));
@@ -933,6 +917,7 @@
     const packetText = diagState.packet ? JSON.stringify(diagState.packet, null, 2) : '';
     try{
       if(packetText) await navigator.clipboard.writeText(packetText);
+      savePanelLockState();
       alert('자동진단 패킷이 표시되고 복사되었습니다.');
     }catch(e){
       alert('자동진단 패킷이 표시되었습니다. 복사는 기기 제한으로 실패할 수 있습니다.');
@@ -952,6 +937,7 @@
       log('재검증 FAIL');
     }
     renderDiag();
+    savePanelLockState();
     alert('재검증 상태: ' + diagState.recheck_status);
   });
 
@@ -964,10 +950,93 @@
       evt.stopPropagation();
       captureTarget(t, evt);
       diagState.capture_mode = false;
+      savePanelLockState();
       alert('좌표 저장 완료: ' + (diagState.clicked_trace?.area_name_ko || '알 수 없음'));
     }
   }, true);
 
+
+  const PANEL_LOCK_KEY = 'tool13_panel_lock_v2';
+
+  function parseStatusFromCard(card){
+    if(card.querySelector('.status-pass')) return 'PASS';
+    if(card.querySelector('.status-tested')) return 'TESTED';
+    return 'FAIL';
+  }
+  function getCardNo(card){
+    const strong = card.querySelector('strong');
+    const m = strong ? String(strong.textContent).match(/^(\d+)\./) : null;
+    return m ? m[1] : '';
+  }
+  function extractCardMeta(card){
+    const lines = Array.from(card.querySelectorAll('.fixed-error-meta')).map(el => String(el.textContent || '').trim());
+    return {meta1: lines[0] || '', meta2: lines[1] || ''};
+  }
+  function readPanelCards(){
+    const wrap = document.getElementById('fixedErrorListBody');
+    if(!wrap) return [];
+    return Array.from(wrap.querySelectorAll('.fixed-error-card')).map(card => {
+      const no = getCardNo(card);
+      const title = (card.querySelector('strong')?.textContent || '').trim();
+      const status = parseStatusFromCard(card);
+      const meta = extractCardMeta(card);
+      return {no, title, status, meta1: meta.meta1, meta2: meta.meta2};
+    }).filter(x => x.no);
+  }
+  function savePanelLockState(){
+    const list = readPanelCards();
+    localStorage.setItem(PANEL_LOCK_KEY, JSON.stringify({saved_at:new Date().toLocaleString(), list}));
+  }
+  function loadPanelLockState(){
+    try{
+      const raw = localStorage.getItem(PANEL_LOCK_KEY);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){ return null; }
+  }
+  function setCardStatus(card, status, meta1, meta2){
+    const line = card.querySelector('.state-line') || card.querySelector('.fixed-error-meta');
+    if(line){
+      line.innerHTML = '상태: <span class="' + (status==='PASS'?'status-pass':status==='TESTED'?'status-tested':'status-fail') + '">' + status + '</span>' + (meta1 ? ' / ' + meta1.replace(/^상태:\s*(PASS|FAIL|TESTED)\s*\/?\s*/,'') : '');
+      line.classList.add('state-line');
+    }
+    const metas = card.querySelectorAll('.fixed-error-meta');
+    if(metas[1] && meta2) metas[1].textContent = meta2;
+    card.dataset.lockedStatus = status;
+  }
+  function applyPanelLockState(){
+    const saved = loadPanelLockState();
+    const wrap = document.getElementById('fixedErrorListBody');
+    if(!saved || !wrap) return false;
+    const map = new Map((saved.list || []).map(item => [item.no, item]));
+    Array.from(wrap.querySelectorAll('.fixed-error-card')).forEach(card => {
+      const no = getCardNo(card);
+      const item = map.get(no);
+      if(!item) return;
+      const current = parseStatusFromCard(card);
+      const finalStatus = item.status === 'PASS' ? 'PASS' : current; // PASS down-grade 차단
+      setCardStatus(card, finalStatus, item.meta1, item.meta2);
+    });
+    renderFixedErrorSummary();
+    return true;
+  }
+  function renderFixedErrorSummary(){
+    const box = document.getElementById('fixedErrorSummary');
+    if(!box) return;
+    const items = readPanelCards().filter(item => ['28','29','30','31','32'].includes(item.no));
+    box.innerHTML = items.map(item => '<span class="fixed-error-pill ' + item.status.toLowerCase() + '">' + item.no + '번 ' + item.status + '</span>').join('');
+  }
+  function initPanelLock(){
+    renderFixedErrorSummary();
+    const loaded = applyPanelLockState();
+    if(!loaded){
+      savePanelLockState();
+      renderFixedErrorSummary();
+    }
+    window.addEventListener('beforeunload', savePanelLockState);
+  }
+
+  initPanelLock();
   loadDiagTrace();
   renderDiag();
 
@@ -980,8 +1049,10 @@
 <div class="fixed-error-wrap" id="fixedErrorListWrap">
   <div class="fixed-error-title">고정 오류리스트</div>
   <div class="fixed-error-note">삭제 금지 / 오늘 확인된 항목만 PASS / 나머지는 FAIL 또는 TESTED 유지</div>
+  <div id="fixedErrorSummary" class="fixed-error-summary"></div>
+  <div class="fixed-error-summary" id="fixedErrorSummary"></div>
   <div class="fixed-error-grid" id="fixedErrorListBody">
-    <div class="fixed-error-card"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 자동진단·이벤트 충돌 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>02. focusin/click 이벤트 좌표 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 중복 클릭 덮어쓰기 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>03. first_fail만 보고되고 실제 좌표 누락</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 진단 우선순위 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>04. 통합설정 클릭 시 다른 항목으로 변경</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: DOM 탐색 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>05. 체제 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 컬럼 매핑 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>06. 목차 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 셀 인덱스 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>07. 개요 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 셀 추적 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>08. ui_trace/clicked_trace 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 동기화 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>09. DIAG_PACKET 화면 vs JSON 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 패킷 생성 로직 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>10. error_report vs DIAG_PACKET 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 구조 분리</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>11. PASS 상태 오표시</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 판정 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>12. clicked_trace 저장 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 덮어쓰기</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>13. first_fail이 clicked_trace 덮음</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 우선순위 역전</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>14. 기준 버튼/파일 변경 시 구조 흔들림</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 기준 고정 미흡</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>15. 중복 이벤트로 좌표 재덮임</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 이벤트 중복 등록</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>16. 수정 후 즉시 재발</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 저장 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>17. 긴 필드 텍스트 수집 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: text extraction 부족</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>18. 미리보기/설정/패킷 값 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 충돌</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>19. view/packet/download 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 출력 경로 분리</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>20. 재검증 상태 전이 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 머신 미구현</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>21. 자동 롤백 기록 없음</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: rollback 로직 미연결</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>22. 오류리스트 누적 안됨</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 리스트 저장 구조 없음</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>23. 다중파일 누적 후 미리보기 소실</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 누적 처리 오류</div><div class="fixed-error-meta">영역: 파일입력→정리/실행→미리보기 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>24. 기능형 오류를 단일 좌표로 처리</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 좌표 구조 한계</div><div class="fixed-error-meta">영역: 다중 구역 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>25. 패널 정보 가시성 부족</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 하단 패널 복원</div><div class="fixed-error-meta">영역: 패널 영역 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>26. 재검증 없이 PASS 처리</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 검증 단계 누락</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>27. 통합설정 헤더 순서 불일치</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 헤더 순서 고정</div><div class="fixed-error-meta">영역: 통합설정 표 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>28. 발행사·1차카테고리 입력 위치 이탈</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 통합설정 내 고정입력칸 반영</div><div class="fixed-error-meta">영역: 통합설정 표 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>29. 실제 헤더 탐색 미흡</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 실제 헤더 탐색 확인</div><div class="fixed-error-meta">영역: 헤더 감지 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>30. 원본연결 드롭다운 전체목록 오인식</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 선택값만 읽기 확인</div><div class="fixed-error-meta">영역: 통합설정 원본연결 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>31. 다운로드 헤더/데이터 깨짐</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 다운로드 헤더·데이터 확인</div><div class="fixed-error-meta">영역: 다운로드 생성부 / 메모: 오늘 확인 완료</div></div>
+    <div class="fixed-error-card"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 자동진단·이벤트 충돌 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>02. focusin/click 이벤트 좌표 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 중복 클릭 덮어쓰기 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>03. first_fail만 보고되고 실제 좌표 누락</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 진단 우선순위 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>04. 통합설정 클릭 시 다른 항목으로 변경</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: DOM 탐색 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>05. 체제 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 컬럼 매핑 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>06. 목차 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 셀 인덱스 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>07. 개요 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 셀 추적 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>08. ui_trace/clicked_trace 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 동기화 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>09. DIAG_PACKET 화면 vs JSON 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 패킷 생성 로직 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>10. error_report vs DIAG_PACKET 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 구조 분리</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>11. PASS 상태 오표시</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 판정 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>12. clicked_trace 저장 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 덮어쓰기</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>13. first_fail이 clicked_trace 덮음</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 우선순위 역전</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>14. 기준 버튼/파일 변경 시 구조 흔들림</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 기준 고정 미흡</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>15. 중복 이벤트로 좌표 재덮임</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 이벤트 중복 등록</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>16. 수정 후 즉시 재발</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 저장 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>17. 긴 필드 텍스트 수집 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: text extraction 부족</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>18. 미리보기/설정/패킷 값 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 충돌</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>19. view/packet/download 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 출력 경로 분리</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>20. 재검증 상태 전이 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 머신 미구현</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>21. 자동 롤백 기록 없음</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: rollback 로직 미연결</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>22. 오류리스트 누적 안됨</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 리스트 저장 구조 없음</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>23. 다중파일 누적 후 미리보기 소실</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 누적 처리 오류</div><div class="fixed-error-meta">영역: 파일입력→정리/실행→미리보기 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>24. 기능형 오류를 단일 좌표로 처리</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 좌표 구조 한계</div><div class="fixed-error-meta">영역: 다중 구역 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>25. 패널 정보 가시성 부족</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 하단 패널 복원</div><div class="fixed-error-meta">영역: 패널 영역 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>26. 재검증 없이 PASS 처리</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 검증 단계 누락</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>27. 통합설정 헤더 순서 불일치</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 헤더 순서 고정</div><div class="fixed-error-meta">영역: 통합설정 표 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>28. 발행사·1차카테고리 고정입력칸 숨김</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 통합 입력 구역 display:none 제거</div><div class="fixed-error-meta">영역: 통합 입력 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>29. 실제 헤더 탐색 미흡</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 실제 헤더 우선 탐색 확인</div><div class="fixed-error-meta">영역: 헤더 감지 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>30. 원본연결 드롭다운 전체목록 오인식</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 현재 선택값 1개만 읽기 확인</div><div class="fixed-error-meta">영역: 통합설정 원본연결 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>31. 다운로드 헤더/데이터 깨짐</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 미리보기와 다운로드 행 일치 확인</div><div class="fixed-error-meta">영역: 다운로드 생성부 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>32. 개요·목차 미리보기 한줄 표시 실패</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 미리보기 long 셀 한줄·말줄임 표시 확인</div><div class="fixed-error-meta">영역: 미리보기 개요/목차 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-meta">영역: 다운로드 생성부 / 메모: 재확인 필요</div></div>
   </div>
 </div>
 
