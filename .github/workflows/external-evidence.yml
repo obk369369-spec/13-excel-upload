@@ -74,7 +74,7 @@ jobs:
             git switch -C external-evidence-archive origin/external-evidence-archive
           else
             git switch --orphan external-evidence-archive
-            git rm -rf .
+            git rm -rf . || true
           fi
           mkdir -p "runs/${GITHUB_SHA}"
           cp /tmp/wic-evidence/static-validation.json "runs/${GITHUB_SHA}/static-validation.json"
