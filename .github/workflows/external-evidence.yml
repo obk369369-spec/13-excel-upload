@@ -1,0 +1,107 @@
+name: External collaboration evidence
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: external-evidence-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Independent validation
+    runs-on: ubuntu-latest
+    outputs:
+      entry: ${{ steps.entry.outputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - id: check
+        name: Generate evidence from real source
+        continue-on-error: true
+        run: node .github/scripts/validate-static-tool.mjs
+      - id: entry
+        if: always()
+        shell: bash
+        run: |
+          if [ -f external-evidence/static-validation.json ]; then
+            ENTRY=$(node -e "process.stdout.write(require('./external-evidence/static-validation.json').entry || '')")
+            echo "path=$ENTRY" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Preserve run artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-evidence-${{ github.sha }}
+          path: external-evidence/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Honest gate
+        if: always()
+        shell: bash
+        run: test "${{ steps.check.outcome }}" = "success"
+
+  archive:
+    name: Permanent evidence archive
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: external-evidence-${{ github.sha }}
+          path: /tmp/wic-evidence
+      - name: Commit immutable evidence record
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin external-evidence-archive; then
+            git switch -C external-evidence-archive origin/external-evidence-archive
+          else
+            git switch --orphan external-evidence-archive
+            git rm -rf .
+          fi
+          mkdir -p "runs/${GITHUB_SHA}"
+          cp /tmp/wic-evidence/static-validation.json "runs/${GITHUB_SHA}/static-validation.json"
+          git add "runs/${GITHUB_SHA}/static-validation.json"
+          git commit -m "증거 보존 ${GITHUB_SHA}"
+          git push origin HEAD:external-evidence-archive
+
+  deploy:
+    name: GitHub Pages deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build isolated page artifact
+        shell: bash
+        run: |
+          mkdir _site
+          cp "${{ needs.validate.outputs.entry }}" _site/index.html
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
