@@ -1,4 +1,4 @@
-name: External collaboration evidence
+name: GitHub platform evidence
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Independent validation
+    name: Internal platform validation
     runs-on: ubuntu-latest
     outputs:
       entry: ${{ steps.entry.outputs.path }}
@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: "22"
       - id: check
-        name: Generate evidence from real source
+        name: Generate GitHub platform evidence from real source
         continue-on-error: true
         run: node .github/scripts/validate-static-tool.mjs
       - id: entry
@@ -52,7 +52,7 @@ jobs:
         run: test "${{ steps.check.outcome }}" = "success"
 
   archive:
-    name: Permanent evidence archive
+    name: Permanent platform-evidence archive
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
     needs: validate
     runs-on: ubuntu-latest
