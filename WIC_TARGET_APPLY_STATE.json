@@ -10,7 +10,16 @@
     "GLOBAL_PRIORITY_AND_WORK_GATE"
   ],
   "last_applied_revision": "fa09bcdec96669d97ef3a18f",
-  "status": "APPLIED_PENDING_TEST",
+  "status": "APPLIED_TEST_PASS_INTERNAL_GITHUB",
+  "test_evidence": {
+    "validated_commit": "8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b",
+    "archive_branch": "external-evidence-archive",
+    "archive_path": "runs/8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b/static-validation.json",
+    "archive_blob": "6cef68b0ae4c3469842e02fe92549856eff96713",
+    "result": "STRUCTURE_PASS",
+    "failures": [],
+    "checked_at": "2026-08-12T08:19:27.184Z"
+  },
   "external_independent_verification": false,
-  "note": "Priority-only canonical feedback consumed by central reference. No local rule clone and no unrelated functional-code edit. Internal GitHub workflow evidence is required before PASS."
+  "note": "Priority-only canonical feedback consumed by central reference. No local rule clone and no unrelated functional-code edit. Validation evidence is GitHub platform evidence, not third-party independent verification."
 }
