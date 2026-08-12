@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "target": "TOOL013",
+  "target_repository": "obk369369-spec/13-excel-upload",
+  "canonical_source": "obk369369-spec/20-operational-manual-viewer/WIC_GLOBAL_OPERATING_RULES.md",
+  "canonical_revision": "fa09bcdec96669d97ef3a18f",
+  "feedback_id": "f2aeb4e8f5fac3c9618f",
+  "apply_mode": "CENTRAL_RULE_REFERENCE_REVISION_ACK",
+  "changed_scope": [
+    "GLOBAL_PRIORITY_AND_WORK_GATE"
+  ],
+  "last_applied_revision": "fa09bcdec96669d97ef3a18f",
+  "status": "APPLIED_PENDING_TEST",
+  "external_independent_verification": false,
+  "note": "Priority-only canonical feedback consumed by central reference. No local rule clone and no unrelated functional-code edit. Internal GitHub workflow evidence is required before PASS."
+}
