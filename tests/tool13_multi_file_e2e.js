@@ -24,6 +24,7 @@ const {chromium} = require('playwright');
   await page.waitForLoadState('load');
   await page.waitForTimeout(100);
   const baselinePageErrorCount = pageErrors.length;
+  assert.strictEqual(baselinePageErrorCount, 0, `startup browser page errors: ${pageErrors.join(' | ')}`);
 
   const first = {name:'first.csv', mimeType:'text/csv', buffer:Buffer.from('Report Title,No.of Pages,Report Code\nAlpha,10,A-1\n')};
   const second = {name:'second.csv', mimeType:'text/csv', buffer:Buffer.from('Report Title,No.of Pages,Report Code\nBeta,20,B-1\n')};

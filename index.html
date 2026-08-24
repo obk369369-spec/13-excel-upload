@@ -1065,9 +1065,11 @@
     window.addEventListener('beforeunload', savePanelLockState);
   }
 
-  initPanelLock();
-  loadDiagTrace();
-  renderDiag();
+  document.addEventListener('DOMContentLoaded', ()=>{
+    initPanelLock();
+    loadDiagTrace();
+    renderDiag();
+  }, {once:true});
 
 })();
 </script>
