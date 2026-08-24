@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>13번 엑셀 자동 업로드 도구 - 미리보기 동작판</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="./vendor/xlsx.full.min.js"></script>
 <script src="./scripts/tool13_batch_state.js"></script>
 <style>
   :root{
@@ -1041,7 +1041,9 @@
     '04':'브라우저 fixture: 통합설정 단일 필드 변경 후 타 필드 불변·재시작 복원',
     '05':'브라우저 fixture: 체제 셀 좌표와 헤더 일치',
     '06':'브라우저 fixture: 목차 셀 좌표와 헤더 일치',
-    '07':'브라우저 fixture: 개요 셀 좌표와 헤더 일치'
+    '07':'브라우저 fixture: 개요 셀 좌표와 헤더 일치',
+    '18':'브라우저 fixture: 미리보기·진단 packet 값 보존',
+    '19':'브라우저 fixture: view·packet·trace/upload XLSX read-back 일치'
   };
   function applyVerifiedFixedErrorEvidence(){
     const wrap = document.getElementById('fixedErrorListBody');
