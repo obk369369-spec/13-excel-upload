@@ -719,7 +719,7 @@
 
   function computeHashes(){
     const viewHash = state.previewRows.length ? ('rows:' + state.previewRows.length) : 'no-preview';
-    return {viewHash, packetHash: diagState.packet ? 'packet-ready' : '-', saveHash: state.previewRows.length ? 'save-ready' : '-'};
+    return {viewHash, packetHash: diagState.clicked_trace && state.previewRows.length ? 'packet-ready' : '-', saveHash: state.previewRows.length ? 'save-ready' : '-'};
   }
 
   function detectCellInfo(target){
@@ -849,10 +849,11 @@
 
   function buildPacket(){
     loadDiagTrace();
+    diagState.last_diag_time = new Date().toLocaleTimeString();
+    diagState.packet = {pending:true};
     diagState.errors = buildErrorList();
     diagState.first_fail = diagState.errors[0] || null;
     const hashes = computeHashes();
-    diagState.last_diag_time = new Date().toLocaleTimeString();
     diagState.packet = {
       clicked_trace: diagState.clicked_trace,
       ui_trace: diagState.clicked_trace,
@@ -863,6 +864,9 @@
         core_log: els.coreLog.textContent.split('\n').slice(-5).join('\n')
       },
       state: diagState.state,
+      errors: diagState.errors,
+      recheck_status: diagState.recheck_status,
+      upload_status: diagState.upload_status,
       files: state.files,
       hashes
     };
@@ -938,9 +942,9 @@
   });
 
   document.getElementById('diagBtn').addEventListener('click', async ()=>{
-    buildPacket();
     diagState.recheck_status = 'TESTED';
     diagState.upload_status = '대기';
+    buildPacket();
     log('자동진단 패킷 생성');
     renderDiag();
     const packetText = diagState.packet ? JSON.stringify(diagState.packet, null, 2) : '';
@@ -965,7 +969,7 @@
       diagState.upload_status = '차단';
       log('재검증 FAIL');
     }
-    renderDiag();
+    buildPacket();
     savePanelLockState();
     alert('재검증 상태: ' + diagState.recheck_status);
   });

@@ -17,6 +17,7 @@ const {chromium} = require('playwright');
   const page = await browser.newPage();
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.stack || error.message));
+  page.on('dialog', dialog => dialog.accept());
   const url = pathToFileURL(path.resolve(__dirname, '..', 'index.html')).href;
   await page.goto(url);
   await page.evaluate(() => localStorage.clear());
@@ -48,6 +49,20 @@ const {chromium} = require('playwright');
   assert.match(await page.locator('#fileInfo').textContent(), /파일 2개 \/ 누적 2행 \/ 중복차단 1행/);
   await page.locator('#runBtn').click();
   assert.strictEqual(await page.locator('#previewTable tbody tr').count(), 2);
+
+  await page.locator('#coordBtn').click();
+  await page.locator('#previewTable tbody td').first().click();
+  await page.locator('#diagBtn').click();
+  await page.waitForFunction(() => document.querySelector('#dpRecheckSummary').textContent === 'TESTED');
+  await page.locator('#recheckBtn').click();
+  await page.waitForFunction(() => document.querySelector('#dpPass').textContent === 'PASS');
+  const packet = JSON.parse(await page.locator('#diagPacketBox').textContent());
+  assert.deepStrictEqual(packet.clicked_trace, packet.ui_trace);
+  assert.deepStrictEqual(packet.errors, []);
+  assert.strictEqual(packet.first_fail, null);
+  assert.strictEqual(packet.recheck_status, 'PASS');
+  assert.strictEqual(packet.upload_status, '검증완료');
+  assert.strictEqual(pageErrors.length, 0, `browser page errors: ${pageErrors.join(' | ')}`);
 
   await browser.close();
   console.log('PASS: TOOL013 actual sequential CSV files -> cumulative preview -> duplicate guard -> restart resume E2E');
