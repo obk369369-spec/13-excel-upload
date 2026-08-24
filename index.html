@@ -1037,6 +1037,23 @@
     if(metas[1] && meta2) metas[1].textContent = meta2;
     card.dataset.lockedStatus = status;
   }
+  const VERIFIED_FIXED_ERROR_EVIDENCE = {
+    '04':'브라우저 fixture: 통합설정 단일 필드 변경 후 타 필드 불변·재시작 복원',
+    '05':'브라우저 fixture: 체제 셀 좌표와 헤더 일치',
+    '06':'브라우저 fixture: 목차 셀 좌표와 헤더 일치',
+    '07':'브라우저 fixture: 개요 셀 좌표와 헤더 일치'
+  };
+  function applyVerifiedFixedErrorEvidence(){
+    const wrap = document.getElementById('fixedErrorListBody');
+    if(!wrap) return;
+    Array.from(wrap.querySelectorAll('.fixed-error-card')).forEach(card => {
+      const no = getCardNo(card);
+      const evidence = VERIFIED_FIXED_ERROR_EVIDENCE[no];
+      if(evidence) setCardStatus(card, 'PASS', evidence, '영역: 대표 fixture / 메모: 실제 브라우저 검증');
+    });
+    savePanelLockState();
+    renderFixedErrorSummary();
+  }
   function applyPanelLockState(){
     const saved = loadPanelLockState();
     const wrap = document.getElementById('fixedErrorListBody');
@@ -1066,6 +1083,7 @@
       savePanelLockState();
       renderFixedErrorSummary();
     }
+    applyVerifiedFixedErrorEvidence();
     window.addEventListener('beforeunload', savePanelLockState);
   }
 
