@@ -695,7 +695,8 @@
   restoreState();
   state.config = state.config || {};
   renderConfig();
-  renderPreview([]);
+  if(state.rows.length) buildPreview();
+  else renderPreview([]);
 
   const DIAG_STORAGE_KEY = 'tool13_diag_v3';
   const diagState = {
@@ -709,6 +710,7 @@
     upload_status: '대기',
     last_diag_time: '',
     rollback_history: [],
+    error_history: [],
     detection_version: 'v1-error-engine'
   };
 
@@ -808,16 +810,28 @@
       time: new Date().toLocaleTimeString()
     };
     diagState.clicked_trace = trace;
-    localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify({clicked_trace: trace}));
+    saveDiagState();
     renderDiag();
   }
 
+  function saveDiagState(){
+    localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify({
+      clicked_trace:diagState.clicked_trace, first_fail:diagState.first_fail,
+      errors:diagState.errors, packet:diagState.packet, state:diagState.state,
+      recheck_status:diagState.recheck_status, upload_status:diagState.upload_status,
+      last_diag_time:diagState.last_diag_time, rollback_history:diagState.rollback_history,
+      error_history:diagState.error_history
+    }));
+  }
   function loadDiagTrace(){
     try{
       const raw = localStorage.getItem(DIAG_STORAGE_KEY);
       if(!raw) return;
       const obj = JSON.parse(raw);
       if(obj.clicked_trace) diagState.clicked_trace = obj.clicked_trace;
+      for(const key of ['first_fail','errors','packet','state','recheck_status','upload_status','last_diag_time','rollback_history','error_history']){
+        if(obj[key] !== undefined) diagState[key] = obj[key];
+      }
     }catch(e){}
   }
 
@@ -848,7 +862,6 @@
   }
 
   function buildPacket(){
-    loadDiagTrace();
     diagState.last_diag_time = new Date().toLocaleTimeString();
     diagState.packet = {pending:true};
     diagState.errors = buildErrorList();
@@ -867,9 +880,12 @@
       errors: diagState.errors,
       recheck_status: diagState.recheck_status,
       upload_status: diagState.upload_status,
+      rollback_history: diagState.rollback_history,
+      error_history: diagState.error_history,
       files: state.files,
       hashes
     };
+    saveDiagState();
     renderDiag();
   }
 
@@ -963,10 +979,17 @@
     if(diagState.clicked_trace && state.previewRows.length > 0 && diagState.packet && (onlyRecheckLeft || list.length <= 1)){
       diagState.recheck_status = 'PASS';
       diagState.upload_status = '검증완료';
+      diagState.state = 'VERIFIED';
       log('재검증 PASS');
     } else {
       diagState.recheck_status = 'FAIL';
       diagState.upload_status = '차단';
+      diagState.state = 'HOLD';
+      const failure = {time:new Date().toLocaleTimeString(), errors:list.map(item => ({no:item.no,name:item.name,reason:item.reason}))};
+      diagState.rollback_history.push(`HOLD ${failure.time}: ${failure.errors.map(item=>item.no).join(',') || 'UNKNOWN'}`);
+      diagState.rollback_history = diagState.rollback_history.slice(-20);
+      diagState.error_history.push(failure);
+      diagState.error_history = diagState.error_history.slice(-50);
       log('재검증 FAIL');
     }
     buildPacket();
@@ -1043,7 +1066,14 @@
     '06':'브라우저 fixture: 목차 셀 좌표와 헤더 일치',
     '07':'브라우저 fixture: 개요 셀 좌표와 헤더 일치',
     '18':'브라우저 fixture: 미리보기·진단 packet 값 보존',
-    '19':'브라우저 fixture: view·packet·trace/upload XLSX read-back 일치'
+    '19':'브라우저 fixture: view·packet·trace/upload XLSX read-back 일치',
+    '12':'브라우저 fixture: clicked_trace 저장·재시작 복원',
+    '13':'브라우저 fixture: first_fail과 clicked_trace 독립 보존',
+    '16':'브라우저 fixture: 수정·검증 상태 재시작 복원',
+    '20':'브라우저 fixture: FAIL→TESTED→PASS 상태전이',
+    '21':'브라우저 fixture: 실패 rollback 이력 저장·복원',
+    '22':'브라우저 fixture: 오류 이력 누적·복원',
+    '26':'브라우저 fixture: 재검증 전 PASS 차단'
   };
   function applyVerifiedFixedErrorEvidence(){
     const wrap = document.getElementById('fixedErrorListBody');
