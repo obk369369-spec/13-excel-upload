@@ -33,6 +33,8 @@ const executablePath = [
   assert.strictEqual(saved.rollback_history.length, 1);
   assert.strictEqual(saved.error_history.length, 1);
   assert.ok(saved.error_history[0].errors.length > 0);
+  assert.strictEqual(saved.error_history[0].scope, 'FUNCTION');
+  assert.deepStrictEqual(saved.error_history[0].affected_areas, ['INPUT','PREVIEW','DIAGNOSTIC','RECHECK']);
 
   await page.reload();
   await page.waitForLoadState('load');
@@ -66,6 +68,7 @@ const executablePath = [
     await card.locator('.status-pass').waitFor();
     assert.match(await card.textContent(), /브라우저 fixture/);
   }
+  assert.strictEqual(await page.locator('#fixedErrorListBody .status-fail').count(), 0);
   assert.deepStrictEqual(errors, [], `browser errors: ${errors.join(' | ')}`);
   await browser.close();
   console.log('PASS: TOOL013 failed recheck -> persisted rollback/error history -> restart -> verified recovery E2E');

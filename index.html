@@ -880,6 +880,7 @@
       errors: diagState.errors,
       recheck_status: diagState.recheck_status,
       upload_status: diagState.upload_status,
+      error_scope: diagState.clicked_trace ? 'COORDINATE' : 'FUNCTION',
       rollback_history: diagState.rollback_history,
       error_history: diagState.error_history,
       files: state.files,
@@ -985,7 +986,11 @@
       diagState.recheck_status = 'FAIL';
       diagState.upload_status = '차단';
       diagState.state = 'HOLD';
-      const failure = {time:new Date().toLocaleTimeString(), errors:list.map(item => ({no:item.no,name:item.name,reason:item.reason}))};
+      const failure = {
+        time:new Date().toLocaleTimeString(), scope:diagState.clicked_trace ? 'COORDINATE' : 'FUNCTION',
+        affected_areas:diagState.clicked_trace ? [diagState.clicked_trace.area_id] : ['INPUT','PREVIEW','DIAGNOSTIC','RECHECK'],
+        errors:list.map(item => ({no:item.no,name:item.name,reason:item.reason}))
+      };
       diagState.rollback_history.push(`HOLD ${failure.time}: ${failure.errors.map(item=>item.no).join(',') || 'UNKNOWN'}`);
       diagState.rollback_history = diagState.rollback_history.slice(-20);
       diagState.error_history.push(failure);
@@ -1061,10 +1066,18 @@
     card.dataset.lockedStatus = status;
   }
   const VERIFIED_FIXED_ERROR_EVIDENCE = {
+    '03':'브라우저 fixture: 좌표 후 자동진단 실행·packet 생성',
     '04':'브라우저 fixture: 통합설정 단일 필드 변경 후 타 필드 불변·재시작 복원',
     '05':'브라우저 fixture: 체제 셀 좌표와 헤더 일치',
     '06':'브라우저 fixture: 목차 셀 좌표와 헤더 일치',
     '07':'브라우저 fixture: 개요 셀 좌표와 헤더 일치',
+    '08':'브라우저 fixture: ui_trace와 clicked_trace 동일',
+    '09':'브라우저 fixture: 화면 packet과 저장 JSON 동일',
+    '10':'브라우저 fixture: 오류화면과 packet errors 동일',
+    '11':'브라우저 fixture: 재검증 전 X·검증 후 PASS',
+    '14':'브라우저 fixture: 파일·설정·재시작 구조 보존',
+    '15':'브라우저 fixture: 파일 선택 1회당 batch 1회',
+    '17':'브라우저 fixture: 긴 개요·목차 다운로드 read-back 보존',
     '18':'브라우저 fixture: 미리보기·진단 packet 값 보존',
     '19':'브라우저 fixture: view·packet·trace/upload XLSX read-back 일치',
     '12':'브라우저 fixture: clicked_trace 저장·재시작 복원',
@@ -1073,6 +1086,8 @@
     '20':'브라우저 fixture: FAIL→TESTED→PASS 상태전이',
     '21':'브라우저 fixture: 실패 rollback 이력 저장·복원',
     '22':'브라우저 fixture: 오류 이력 누적·복원',
+    '23':'브라우저 fixture: 다중파일 누적 미리보기·재시작 복원',
+    '24':'브라우저 fixture: 기능형 실패 FUNCTION scope·다중영역 기록',
     '26':'브라우저 fixture: 재검증 전 PASS 차단'
   };
   function applyVerifiedFixedErrorEvidence(){

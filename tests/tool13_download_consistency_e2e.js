@@ -36,7 +36,7 @@ async function workbookRows(page, download){
 
   await page.locator('#fileInput').setInputFiles({
     name:'consistency.csv', mimeType:'text/csv',
-    buffer:Buffer.from('Report Title,No.of Pages,Report Description,Table of Contents,Report Code\nAlpha,10,Overview A,Chapter A,A-1\nBeta,20,Overview B,Chapter B,B-1\n')
+    buffer:Buffer.from('Report Title,No.of Pages,Report Description,Table of Contents,Report Code\nAlpha,10,' + 'Overview A '.repeat(30) + ',' + 'Chapter A '.repeat(30) + ',A-1\nBeta,20,Overview B,Chapter B,B-1\n')
   });
   await page.waitForFunction(() => document.querySelector('#fileInfo').textContent.includes('누적 2행'));
   await page.locator('#coordBtn').click();
@@ -60,6 +60,11 @@ async function workbookRows(page, download){
   const strings = rows => rows.map(row => row.map(value => String(value)));
   assert.deepStrictEqual(strings(traceRows.slice(1).map(row => row.slice(0,3))), strings(preview.map(row => row.slice(0,3))));
   assert.deepStrictEqual(strings(traceRows.slice(1).map(row => row.slice(3))), strings(uploadRows.slice(1)));
+  const uploadHeader = uploadRows[0];
+  const overviewIndex = uploadHeader.indexOf('개요');
+  const tocIndex = uploadHeader.indexOf('목차');
+  assert.ok(String(uploadRows[1][overviewIndex]).length > 200);
+  assert.ok(String(uploadRows[1][tocIndex]).length > 200);
   for(const no of ['18','19']){
     const card = page.locator('#fixedErrorListBody .fixed-error-card').filter({hasText:`${no}.`});
     await card.locator('.status-pass').waitFor();
