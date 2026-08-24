@@ -1,0 +1,21 @@
+{
+  "schema": "wic.external-evidence.v1",
+  "repository": "obk369369-spec/13-excel-upload",
+  "commit": "1d51ba4816cdda704ce9580309b670d075762d17",
+  "checkedAt": "2026-08-24T08:23:28.817Z",
+  "entry": "index.html",
+  "htmlCandidates": [
+    "index.html"
+  ],
+  "bytes": 63715,
+  "controls": {
+    "inputs": 6,
+    "buttons": 7
+  },
+  "scripts": {
+    "classic": 1,
+    "module": 0
+  },
+  "result": "STRUCTURE_PASS",
+  "failures": []
+}
