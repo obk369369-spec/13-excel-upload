@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>13번 엑셀 자동 업로드 도구 - 미리보기 동작판</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="./scripts/tool13_batch_state.js"></script>
 <style>
   :root{
     --line:#d9dee8; --bg:#fff; --text:#111827; --muted:#6b7280; --blue:#2563eb;
@@ -191,6 +192,7 @@
 <script>
 (() => {
   const STORAGE_KEY = 'tool13_preview_working_v1';
+  const BATCH_STORAGE_KEY = 'tool13_batch_checkpoint_v1';
   const SAVE_HEADERS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
   const CONFIG_FIELDS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
   const COMMON_FIELDS = ['발행사','1차카테고리','2차카테고리','3차카테고리'];
@@ -426,6 +428,10 @@
     state.common.publisher = els.publisherInput.value;
     state.common.cat1 = els.cat1Input.value;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({config:state.config, common:state.common}));
+    localStorage.setItem(BATCH_STORAGE_KEY, Tool13BatchState.serialize({
+      files:state.files, headers:state.headers, rows:state.rows,
+      batches:state.batches || 0, duplicate_rows:state.duplicate_rows || 0
+    }));
   }
   function restoreState(){
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -438,6 +444,13 @@
         els.publisherInput.value = state.common.publisher || '';
         els.cat1Input.value = state.common.cat1 || '';
       }
+      const checkpoint = Tool13BatchState.restore(localStorage.getItem(BATCH_STORAGE_KEY));
+      state.files = checkpoint.files;
+      state.headers = checkpoint.headers;
+      state.rows = checkpoint.rows;
+      state.batches = checkpoint.batches;
+      state.duplicate_rows = checkpoint.duplicate_rows;
+      els.fileInfo.textContent = `파일 ${state.files.length}개 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`;
     }catch(e){}
   }
 
@@ -496,11 +509,12 @@
   }
 
   async function loadFiles(files){
-    state.files = Array.from(files).map(f=>f.name);
-    state.rows = [];
-    state.headers = [];
-    els.fileInfo.textContent = `파일 ${state.files.length}개`;
-    log(`파일 ${state.files.length}개 읽기 시작`);
+    if(!files || files.length === 0) return;
+    const batchFiles = Array.from(files).map(f=>f.name);
+    const batchRows = [];
+    const batchHeaders = [];
+    els.fileInfo.textContent = `새 파일 ${batchFiles.length}개 읽는 중`;
+    log(`순차 배치 ${batchFiles.length}개 읽기 시작`);
     for(const file of files){
       const ext = file.name.split('.').pop().toLowerCase();
       let rows = [];
@@ -515,21 +529,32 @@
       if(!rows.length) continue;
       const headerRowIdx = findBestHeaderRow(rows);
       const headers = (rows[headerRowIdx] || []).map(v=>str(v));
-      if(!state.headers.length) state.headers = headers;
+       headers.forEach(header=>{ if(header && !batchHeaders.includes(header)) batchHeaders.push(header); });
       log(`헤더 감지: ${file.name} / ${headerRowIdx+1}행`);
       for(let i=headerRowIdx+1;i<rows.length;i++){
         const arr = rows[i];
         if(!arr || arr.every(v=>str(v)==='')) continue;
         const obj = {origin_file:file.name, origin_row:i+1};
         headers.forEach((h,idx)=> obj[h] = arr[idx]);
-        state.rows.push(obj);
+        batchRows.push(obj);
       }
     }
+    const merged = Tool13BatchState.mergeBatch({
+      files:state.files, headers:state.headers, rows:state.rows,
+      batches:state.batches || 0, duplicate_rows:state.duplicate_rows || 0
+    }, {files:batchFiles, headers:batchHeaders, rows:batchRows});
+    state.files = merged.files;
+    state.headers = merged.headers;
+    state.rows = merged.rows;
+    state.batches = merged.batches;
+    state.duplicate_rows = merged.duplicate_rows;
     if(!Object.keys(state.config).length) state.config = defaultConfig();
     CONFIG_FIELDS.forEach(f=>{ if(!state.config[f]) state.config[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'}; if(!state.config[f].source) state.config[f].source = inferHeader(f); });
     renderConfig();
-    renderPreview([]);
-    log(`누적 행 ${state.rows.length}개`);
+    buildPreview();
+    saveState();
+    els.fileInfo.textContent = `파일 ${state.files.length}개 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`;
+    log(`체크포인트 저장: 배치 ${state.batches}회 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`);
   }
 
   function applyField(field, row){
@@ -653,12 +678,16 @@
     XLSX.writeFile(wb, kind==='trace' ? 'tool13_trace.xlsx' : 'tool13_upload.xlsx');
   }
 
-  els.fileInput.addEventListener('change', e=> loadFiles(e.target.files));
+  els.fileInput.addEventListener('change', async e=>{
+    await loadFiles(Array.from(e.target.files || []));
+    e.target.value = '';
+  });
   els.runBtn.addEventListener('click', ()=>{ saveState(); buildPreview(); });
   els.traceBtn.addEventListener('click', ()=> downloadCSV('trace'));
   els.uploadBtn.addEventListener('click', ()=> downloadCSV('upload'));
   els.resetBtn.addEventListener('click', ()=>{
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(BATCH_STORAGE_KEY);
     location.reload();
   });
   [els.publisherInput,els.cat1Input].forEach(el=>el.addEventListener('input', saveState));
