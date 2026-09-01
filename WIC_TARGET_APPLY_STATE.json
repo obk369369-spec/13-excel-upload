@@ -10,7 +10,7 @@
     "GLOBAL_PRIORITY_AND_WORK_GATE"
   ],
   "last_applied_revision": "fa09bcdec96669d97ef3a18f",
-  "status": "LOCAL_REAL_USE_E2E_PASS_REMOTE_DEPLOY_PENDING",
+  "status": "REMOTE_VERIFIED_DEPLOYED_REAL_USE_PASS",
   "real_use_validation": {
     "root": "T13-RC-LARGE-BATCH-MAIN-THREAD-STALL",
     "same_actual_input_files": 114,
@@ -23,9 +23,13 @@
     "code_pass": true,
     "smoke_pass": true,
     "e2e_pass": true,
-    "deployed": false,
-    "deployed_e2e_pass": false,
-    "real_use_pass": false
+    "remote_commit": "0d009b94304e20fb61ad2ec8e3793bcb9144db98",
+    "remote_read_back": true,
+    "canonical_entrypoint": "I:\\GPT 도구 작업\\13번 엑셀 업로드 도구\\index.html",
+    "canonical_sha256": "bf94ef3cf9b0b38322443386065a6866a52e0fd0b3e2ad2dc584711bd1498534",
+    "deployed": true,
+    "deployed_e2e_pass": true,
+    "real_use_pass": true
   },
   "test_evidence": {
     "validated_commit": "8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b",
