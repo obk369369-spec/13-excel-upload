@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "target": "TOOL013",
+  "root": "T13-RC-LARGE-BATCH-MAIN-THREAD-STALL",
+  "actual_input": {
+    "files": 114,
+    "total_bytes": 21635139,
+    "manifest_sha256": "a37c5f66f42d522f34abdb5ae6dd29504d506bee4c84ff9f12d65db59036e2cd",
+    "publisher": "MarketsandMarkets"
+  },
+  "before": {
+    "result": "BLOCKED",
+    "visible_state": "행 0 / 발행사 UNKNOWN / 순차 배치 114개 읽기 시작",
+    "reproduced": "browser event loop remained unavailable beyond 150 seconds",
+    "cause": "deployed canonical folder omitted required vendor/scripts assets, while the existing batch path also rendered and serialized the large data set without yielding or size bounds"
+  },
+  "after": {
+    "result": "PASS",
+    "elapsed_ms": 5279,
+    "generated_rows": 823,
+    "publisher": "MarketsandMarkets",
+    "pass_count": 114,
+    "hold_count": 0,
+    "preview_rows_total": 823,
+    "preview_rows_rendered": 200,
+    "output_file": "tool13_upload.xlsx",
+    "output_bytes": 20936641,
+    "output_sha256": "6fa11cd2c10617a3eed75037e59d51915f284fd2555d3744814cf3f6d9a40167"
+  },
+  "validation": {
+    "same_actual_input_retested": true,
+    "existing_regression_suite": "PASS",
+    "release_blockers": [],
+    "test": "tests/tool13_actual_114_e2e.js"
+  }
+}

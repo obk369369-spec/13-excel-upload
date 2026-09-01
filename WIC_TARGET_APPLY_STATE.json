@@ -10,7 +10,23 @@
     "GLOBAL_PRIORITY_AND_WORK_GATE"
   ],
   "last_applied_revision": "fa09bcdec96669d97ef3a18f",
-  "status": "APPLIED_TEST_PASS_INTERNAL_GITHUB",
+  "status": "LOCAL_REAL_USE_E2E_PASS_REMOTE_DEPLOY_PENDING",
+  "real_use_validation": {
+    "root": "T13-RC-LARGE-BATCH-MAIN-THREAD-STALL",
+    "same_actual_input_files": 114,
+    "generated_rows": 823,
+    "publisher": "MarketsandMarkets",
+    "pass_count": 114,
+    "hold_count": 0,
+    "output_file": "tool13_upload.xlsx",
+    "evidence": "tests/tool13_actual_114_evidence.json",
+    "code_pass": true,
+    "smoke_pass": true,
+    "e2e_pass": true,
+    "deployed": false,
+    "deployed_e2e_pass": false,
+    "real_use_pass": false
+  },
   "test_evidence": {
     "validated_commit": "8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b",
     "archive_branch": "external-evidence-archive",
