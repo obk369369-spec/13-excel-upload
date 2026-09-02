@@ -16,7 +16,7 @@
   },
   "after": {
     "result": "PASS",
-    "elapsed_ms": 5279,
+    "elapsed_ms": 6885,
     "generated_rows": 823,
     "publisher": "MarketsandMarkets",
     "pass_count": 114,
@@ -24,13 +24,21 @@
     "preview_rows_total": 823,
     "preview_rows_rendered": 200,
     "output_file": "tool13_upload.xlsx",
-    "output_bytes": 20936641,
-    "output_sha256": "6fa11cd2c10617a3eed75037e59d51915f284fd2555d3744814cf3f6d9a40167"
+    "primary_category": "시장 조사 자료 - 영문판",
+    "primary_category_rows": 823,
+    "output_bytes": 20962977,
+    "output_sha256": "d026b90abaf3f093e58c8427ed68435c53edb89a55be53ad1e1b2a0155fe8729"
   },
   "validation": {
     "same_actual_input_retested": true,
     "existing_regression_suite": "PASS",
+    "mapping_preview_download_actual_value_e2e": "PASS",
+    "primary_category_all_output_rows": "PASS",
+    "temporary_excel_lock_files_excluded": true,
     "release_blockers": [],
-    "test": "tests/tool13_actual_114_e2e.js"
+    "tests": [
+      "tests/tool13_primary_category_mapping_value_e2e.js",
+      "tests/tool13_actual_114_e2e.js"
+    ]
   }
 }

@@ -143,7 +143,7 @@
         <h3>통합 입력</h3>
         <div class="grid2">
           <div class="field"><label>발행사</label><input id="publisherInput" placeholder="발행사"></div>
-          <div class="field"><label>전체 1차카테고리</label><input id="cat1Input" placeholder="1차카테고리"></div>
+          <div class="field"><label>전체 1차카테고리</label><input id="cat1Input" value="시장 조사 자료 - 영문판" placeholder="1차카테고리"></div>
         </div>
         <div class="small" style="margin-top:6px;">선택은 저장된다. 원본연결 / 연결 안함 / 빈값 / preset만 사용한다.</div>
       </div>
@@ -194,6 +194,7 @@
   const STORAGE_KEY = 'tool13_preview_working_v1';
   const BATCH_STORAGE_KEY = 'tool13_batch_checkpoint_v1';
   const MAX_BATCH_CHECKPOINT_CHARS = 3000000;
+  const DEFAULT_PRIMARY_CATEGORY = '시장 조사 자료 - 영문판';
   const SAVE_HEADERS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
   const CONFIG_FIELDS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
   const COMMON_FIELDS = ['발행사','1차카테고리','2차카테고리','3차카테고리'];
@@ -241,7 +242,7 @@
 
   const state = {
     files: [], headers: [], rows: [], previewRows: [],
-    config: {}, common: {publisher:'',cat1:'',cat2:'',cat3:'',workOrder:'01'}
+    config: {}, common: {publisher:'',cat1:DEFAULT_PRIMARY_CATEGORY,cat2:'',cat3:'',workOrder:'01'}
   };
 
   const els = {
@@ -453,7 +454,7 @@
       if(data.common){
         state.common = {...state.common, ...data.common};
         els.publisherInput.value = state.common.publisher || '';
-        els.cat1Input.value = state.common.cat1 || '';
+        els.cat1Input.value = state.common.cat1 || DEFAULT_PRIMARY_CATEGORY;
       }
       const checkpointRaw = localStorage.getItem(BATCH_STORAGE_KEY);
       const checkpointMeta = checkpointRaw ? JSON.parse(checkpointRaw) : {};
@@ -502,6 +503,7 @@
         const f = sel.dataset.field, r = sel.dataset.role;
         state.config[f][r] = sel.value;
         saveState();
+        if(state.rows.length) buildPreview();
       });
     });
   }
@@ -595,7 +597,7 @@
     const cfg = state.config[field] || {mode:'원본연결', source:'', preset:'선택'};
     const sourceValue = cfg.source ? str(row[cfg.source]) : '';
     if(field==='발행사') return els.publisherInput.value || detectPublisher() || '';
-    if(field==='1차카테고리') return els.cat1Input.value || '';
+    if(field==='1차카테고리') return els.cat1Input.value || DEFAULT_PRIMARY_CATEGORY;
     if(cfg.mode==='연결 안함') return '';
     if(cfg.mode==='빈값') return '';
     if(cfg.mode==='원본연결') return sourceValue;
@@ -732,7 +734,10 @@
     localStorage.removeItem(BATCH_STORAGE_KEY);
     location.reload();
   });
-  [els.publisherInput,els.cat1Input].forEach(el=>el.addEventListener('input', saveState));
+  [els.publisherInput,els.cat1Input].forEach(el=>el.addEventListener('input', ()=>{
+    saveState();
+    if(state.rows.length) buildPreview();
+  }));
 
   restoreState();
   state.config = state.config || {};
