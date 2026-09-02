@@ -31,6 +31,25 @@
     "deployed_e2e_pass": true,
     "real_use_pass": true
   },
+  "real_use_validation_20260902": {
+    "status": "REMOTE_VERIFIED_DEPLOYED_REAL_USE_PASS",
+    "modified_features": [
+      "PRIMARY_CATEGORY_DEFAULT_ALL_ROWS",
+      "MAPPING_CHANGE_IMMEDIATE_PREVIEW_VALUE_REFRESH"
+    ],
+    "actual_input_files": 114,
+    "generated_rows": 823,
+    "publisher": "MarketsandMarkets",
+    "pass_count": 114,
+    "hold_count": 0,
+    "primary_category": "시장 조사 자료 - 영문판",
+    "primary_category_rows": 823,
+    "mapping_preview_download_actual_value_e2e": true,
+    "affected_regression": "PASS",
+    "canonical_entrypoint": "I:\\GPT 도구 작업\\13번 엑셀 업로드 도구\\index.html",
+    "deployed_canonical_retest": "PASS",
+    "evidence": "tests/tool13_actual_114_evidence.json"
+  },
   "test_evidence": {
     "validated_commit": "8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b",
     "archive_branch": "external-evidence-archive",
