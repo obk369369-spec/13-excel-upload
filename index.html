@@ -6,6 +6,7 @@
 <title>13번 엑셀 자동 업로드 도구 - 미리보기 동작판</title>
 <script src="./vendor/xlsx.full.min.js"></script>
 <script src="./scripts/tool13_batch_state.js"></script>
+<script src="./vendor/idb-keyval-6.2.2.js"></script>
 <style>
   :root{
     --line:#d9dee8; --bg:#fff; --text:#111827; --muted:#6b7280; --blue:#2563eb;
@@ -426,6 +427,8 @@
   }
 
 
+  const batchStore = idbKeyval.createStore('tool13-checkpoint-' + location.pathname, 'batches');
+  let checkpointWrite = Promise.resolve();
   function saveState(){
     state.common.publisher = els.publisherInput.value;
     state.common.cat1 = els.cat1Input.value;
@@ -442,21 +445,36 @@
         batches:state.batches || 0, duplicate_rows:state.duplicate_rows || 0,
         compact:true, row_count:state.rows.length
       }));
-      log(`대용량 배치 ${state.rows.length}행: 브라우저 저장 한도를 넘어 현재 화면에서만 유지`);
+      log(`대용량 배치 ${state.rows.length}행: 로컬 재개 캐시에 저장 중`);
     }
+    const revision = crypto.randomUUID();
+    localStorage.setItem(BATCH_STORAGE_KEY + ':revision', revision);
+    const snapshot = {revision, batch:serialized, config:structuredClone(state.config), common:structuredClone(state.common)};
+    checkpointWrite = checkpointWrite.then(()=>idbKeyval.set('current', snapshot, batchStore)).then(()=>{
+      log(`로컬 재개 캐시 저장 완료: ${JSON.parse(serialized).rows.length}행`);
+      return true;
+    }).catch(error=>{ log(`HOLD: 로컬 재개 캐시 저장 실패 / ${error.message}`); return false; });
+    return checkpointWrite;
   }
-  function restoreState(){
+  async function restoreState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(!raw) return;
     try{
-      const data = JSON.parse(raw);
+      let cached;
+      try { cached = await idbKeyval.get('current', batchStore); }
+      catch(error){ log(`HOLD: 로컬 재개 캐시 읽기 실패 / ${error.message}`); }
+      if(cached && cached.revision !== localStorage.getItem(BATCH_STORAGE_KEY + ':revision')){
+        log('HOLD: 미완료 저장과 이전 캐시가 달라 이전 행을 자동 복원하지 않음');
+        cached = undefined;
+      }
+      const data = cached || JSON.parse(raw);
       if(data.config) state.config = data.config;
       if(data.common){
         state.common = {...state.common, ...data.common};
         els.publisherInput.value = state.common.publisher || '';
         els.cat1Input.value = state.common.cat1 || DEFAULT_PRIMARY_CATEGORY;
       }
-      const checkpointRaw = localStorage.getItem(BATCH_STORAGE_KEY);
+      const checkpointRaw = cached ? cached.batch : localStorage.getItem(BATCH_STORAGE_KEY);
       const checkpointMeta = checkpointRaw ? JSON.parse(checkpointRaw) : {};
       const checkpoint = Tool13BatchState.restore(checkpointRaw);
       state.files = checkpoint.files;
@@ -587,7 +605,7 @@
     CONFIG_FIELDS.forEach(f=>{ if(!state.config[f]) state.config[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'}; if(!state.config[f].source) state.config[f].source = inferHeader(f); });
     renderConfig();
     buildPreview();
-    saveState();
+    await saveState();
     els.fileInfo.textContent = `파일 ${state.files.length}개 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`;
     log(`체크포인트 저장: 배치 ${state.batches}회 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`);
     return {status:'PASS', files:batchFiles.length, rows:state.rows.length};
@@ -729,9 +747,13 @@
   els.runBtn.addEventListener('click', ()=>{ saveState(); buildPreview(); });
   els.traceBtn.addEventListener('click', ()=> downloadCSV('trace'));
   els.uploadBtn.addEventListener('click', ()=> downloadCSV('upload'));
-  els.resetBtn.addEventListener('click', ()=>{
+  els.resetBtn.addEventListener('click', async ()=>{
+    await checkpointWrite;
+    try { await idbKeyval.del('current', batchStore); }
+    catch(error){ log(`HOLD: 재개 캐시 초기화 실패 / ${error.message}`); return; }
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(BATCH_STORAGE_KEY);
+    localStorage.removeItem(BATCH_STORAGE_KEY + ':revision');
     location.reload();
   });
   [els.publisherInput,els.cat1Input].forEach(el=>el.addEventListener('input', ()=>{
@@ -739,11 +761,14 @@
     if(state.rows.length) buildPreview();
   }));
 
-  restoreState();
-  state.config = state.config || {};
-  renderConfig();
-  if(state.rows.length) buildPreview();
-  else renderPreview([]);
+  els.fileInput.disabled = true;
+  els.runBtn.disabled = true;
+  restoreState().then(()=>{
+    state.config = state.config || {};
+    renderConfig();
+    if(state.rows.length) buildPreview();
+    else renderPreview([]);
+  }).finally(()=>{ els.fileInput.disabled = false; els.runBtn.disabled = false; });
 
   const DIAG_STORAGE_KEY = 'tool13_diag_v3';
   const diagState = {

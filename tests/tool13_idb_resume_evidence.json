@@ -1,0 +1,14 @@
+{
+  "entry": "I:\\오부장 AI (인공지능)\\WIC34_C_REBUILD\\repo13\\index.html",
+  "input": "D:\\홈페이지 자료 입력\\Metadata Sheet (Market Report)\\MarketsandMarkets\\입력전\\MarketsandMarkets_Latest_엑셀파일만_평면압축\\MarketsandMarkets New Reports Metadata 01072025.xlsx",
+  "test": "file input -> cache commit -> reload -> exact preview -> download/reopen -> reset",
+  "status": "PASS",
+  "real_rows": 6,
+  "real_source_title_preserved": true,
+  "prior_trial": "FAIL: oracle omitted existing str().trim() contract; same input retained",
+  "large_input_chars": 4050383,
+  "expected_rows": 160,
+  "actual_rows": 160,
+  "all_titles_and_descriptions_exact": true,
+  "reset_durable": true
+}
