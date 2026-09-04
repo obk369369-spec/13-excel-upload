@@ -284,9 +284,15 @@
   }
   function inferHeader(target){
     const aliases = HEADER_ALIASES[target] || [];
+    for(const a of aliases){
+      const exact = state.headers.find(h=>norm(h) === norm(a));
+      if(exact) return exact;
+    }
     for(const h of state.headers){
       for(const a of aliases){
-        if(norm(h).includes(norm(a)) || norm(a).includes(norm(h))) return h;
+        const header = norm(h);
+        const alias = norm(a);
+        if(Math.min(header.length, alias.length) >= 4 && (header.includes(alias) || alias.includes(header))) return h;
       }
     }
     return '';
@@ -545,6 +551,10 @@
 
   async function loadFiles(files){
     if(!files || files.length === 0) return;
+    const configureFromHeaders = state.rows.length === 0 && !CONFIG_FIELDS.some(field => {
+      const config = state.config[field];
+      return config && (config.source || config.mode !== '원본연결' || config.preset !== '선택');
+    });
     const batchFiles = Array.from(files).map(f=>f.name);
     const batchRows = [];
     const batchHeaders = [];
@@ -601,7 +611,7 @@
     state.rows = merged.rows;
     state.batches = merged.batches;
     state.duplicate_rows = merged.duplicate_rows;
-    if(!Object.keys(state.config).length) state.config = defaultConfig();
+    if(configureFromHeaders || !Object.keys(state.config).length) state.config = defaultConfig();
     CONFIG_FIELDS.forEach(f=>{ if(!state.config[f]) state.config[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'}; if(!state.config[f].source) state.config[f].source = inferHeader(f); });
     renderConfig();
     buildPreview();
@@ -652,7 +662,7 @@
         if(p==='원본 연결') return sourceValue;
         if(p==='페이지수+pages'){
           const pageVal = applyField('페이지수', row);
-          return pageVal ? `${pageVal} pages` : '';
+          return pageVal ? `${pageVal} Pages` : '';
         }
       }
       if(field==='페이지수' && p==='숫자만 추출') return sourceValue.replace(/[^0-9]/g,'');
@@ -737,7 +747,12 @@
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, kind==='trace' ? 'trace' : 'upload');
-    XLSX.writeFile(wb, kind==='trace' ? 'tool13_trace.xlsx' : 'tool13_upload.xlsx');
+    const originalName = state.files.length ? state.files[state.files.length - 1] : 'tool13';
+    const baseName = originalName.replace(/\.(xlsx?|csv)$/i, '') || 'tool13';
+    const outputName = kind==='trace'
+      ? `${baseName} - 월드 입력 - 추적.xls`
+      : `${baseName} - 월드 입력.xls`;
+    XLSX.writeFile(wb, outputName, {bookType:'xls'});
   }
 
   els.fileInput.addEventListener('change', async e=>{
