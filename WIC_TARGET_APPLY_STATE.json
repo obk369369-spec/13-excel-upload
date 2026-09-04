@@ -50,6 +50,26 @@
     "deployed_canonical_retest": "PASS",
     "evidence": "tests/tool13_actual_114_evidence.json"
   },
+  "input_format_output_20260904": {
+    "status": "DEPLOYED_PASS",
+    "validated_runtime_commit": "e9d7abe0cfb55f92fd55155b7605a4c861d82207",
+    "actual_xls_input": "99Strategy Metadata 2908 USD 2021-04-08.xls",
+    "actual_xls_rows": 418,
+    "actual_xls_output": "99Strategy Metadata 2908 USD 2021-04-08 - 월드 입력.xls",
+    "actual_xls_format": "97 Pages",
+    "actual_xlsx_input": "MarketsandMarkets New Reports Metadata 01072025.xlsx",
+    "actual_xlsx_rows": 6,
+    "actual_xlsx_output": "MarketsandMarkets New Reports Metadata 01072025 - 월드 입력.xls",
+    "actual_xlsx_format": "104 Pages",
+    "output_container": "BIFF8_OLE_XLS",
+    "remote_runtime_read_back": true,
+    "canonical_entrypoint": "I:\\GPT 도구 작업\\13번 엑셀 업로드 도구\\index.html",
+    "canonical_sha256": "72ef43947618ee3d8f8b7a4d0cf3bb4a496122c39427e915da51e5b0ecaec7b5",
+    "deployed_canonical_retest": "PASS",
+    "affected_regression": "PASS",
+    "bulk_114_files_823_rows": "SKIP_REUSE_UNAFFECTED",
+    "evidence": "tests/tool13_xls_xlsx_to_xls_evidence.json"
+  },
   "test_evidence": {
     "validated_commit": "8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b",
     "archive_branch": "external-evidence-archive",

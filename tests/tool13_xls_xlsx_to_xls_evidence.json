@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "target": "TOOL013",
+  "validated_runtime_commit": "e9d7abe0cfb55f92fd55155b7605a4c861d82207",
+  "test_path": "original file input -> parse -> preview -> download button -> BIFF8 .xls -> reopen -> compare",
+  "development_e2e": {
+    "status": "PASS",
+    "xls": {
+      "input": "99Strategy Metadata 2908 USD 2021-04-08.xls",
+      "rows": 418,
+      "expected_output": "99Strategy Metadata 2908 USD 2021-04-08 - 월드 입력.xls",
+      "expected_format": "97 Pages",
+      "actual_format": "97 Pages"
+    },
+    "xlsx": {
+      "input": "MarketsandMarkets New Reports Metadata 01072025.xlsx",
+      "rows": 6,
+      "expected_output": "MarketsandMarkets New Reports Metadata 01072025 - 월드 입력.xls",
+      "expected_format": "104 Pages",
+      "actual_format": "104 Pages"
+    },
+    "output_signature": "D0 CF 11 E0 A1 B1 1A E1",
+    "output_container": "BIFF8_OLE_XLS"
+  },
+  "affected_regression": {
+    "status": "PASS",
+    "tests": [
+      "tests/tool13_field_mapping_e2e.js",
+      "tests/tool13_download_consistency_e2e.js",
+      "tests/tool13_multi_file_e2e.js"
+    ],
+    "bulk_114_files_823_rows": "SKIP_REUSE_UNAFFECTED"
+  },
+  "deployment": {
+    "canonical_entrypoint": "I:\\GPT 도구 작업\\13번 엑셀 업로드 도구\\index.html",
+    "sha256": "72ef43947618ee3d8f8b7a4d0cf3bb4a496122c39427e915da51e5b0ecaec7b5",
+    "github_local_match": true,
+    "deployed_copy_e2e": "PASS"
+  }
+}
