@@ -1,0 +1,22 @@
+{
+  "schema": "wic.external-evidence.v1",
+  "repository": "obk369369-spec/13-excel-upload",
+  "commit": "4734e69962b6f197e244ef314806aa240055a2dd",
+  "checkedAt": "2026-09-28T10:11:46.988Z",
+  "entry": "index.html",
+  "htmlCandidates": [
+    "index.html",
+    "13번_완전개선본.html"
+  ],
+  "bytes": 69722,
+  "controls": {
+    "inputs": 6,
+    "buttons": 7
+  },
+  "scripts": {
+    "classic": 1,
+    "module": 0
+  },
+  "result": "STRUCTURE_PASS",
+  "failures": []
+}
