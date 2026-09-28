@@ -70,6 +70,22 @@
     "bulk_114_files_823_rows": "SKIP_REUSE_UNAFFECTED",
     "evidence": "tests/tool13_xls_xlsx_to_xls_evidence.json"
   },
+  "complete_improved_edition_e2e_20260928": {
+    "status": "ACTUAL_FILE_E2E_PASS",
+    "entrypoint": "13번_완전개선본.html",
+    "actual_input_files": 114,
+    "generated_rows": 823,
+    "pass_count": 114,
+    "hold_count": 0,
+    "duplicate_blocked_rows": 0,
+    "output_rows": 823,
+    "output_file": "MarketsandMarkets Revamped Reports Metadata 17072025 - 월드 입력.xls",
+    "output_bytes": 2103296,
+    "output_sha256": "259c5be2c7fa987365c832926eb0be95fab1b140db923306531d977d39afdb81",
+    "error": null,
+    "evidence": "tests/tool13_actual_114_evidence.json",
+    "next_checkpoint": "TOOL013_EVIDENCE_RECORDED"
+  },
   "test_evidence": {
     "validated_commit": "8f2f1f3e57c9cbba7fd5a0621ba3419d63feee0b",
     "archive_branch": "external-evidence-archive",

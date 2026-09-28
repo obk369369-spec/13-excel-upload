@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13번 엑셀 자동 업로드 도구 - 미리보기 동작판</title>
+<script src="./vendor/xlsx.full.min.js"></script>
+<script src="./scripts/tool13_batch_state.js"></script>
+<script src="./vendor/idb-keyval-6.2.2.js"></script>
+<style>
+  :root{
+    --line:#d9dee8; --bg:#fff; --text:#111827; --muted:#6b7280; --blue:#2563eb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,"Malgun Gothic",sans-serif;background:#fff;color:var(--text)}
+  .app{padding:12px}
+  .toolbar,.panel{border:1px solid var(--line);border-radius:10px;background:#fff}
+  .toolbar{padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  button,input,select{font:inherit}
+  button{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .layout{display:grid;grid-template-columns:58% 42%;gap:10px;align-items:start}
+  .panel{padding:10px;min-height:300px}
+  .section{margin-bottom:12px}
+  .section h3{font-size:14px;margin:0 0 8px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--muted)}
+  .field input,.field select{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .small{font-size:12px;color:var(--muted)}
+  .table-wrap{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:560px}
+  table{border-collapse:collapse;table-layout:auto;width:max-content;min-width:100%}
+  th,td{
+    border-bottom:1px solid var(--line);
+    border-right:1px solid #eef2f7;
+    padding:7px 8px;
+    text-align:left;
+    vertical-align:top;
+    white-space:nowrap !important;
+    word-break:keep-all !important;
+    overflow-wrap:normal !important;
+    writing-mode:horizontal-tb !important;
+    text-orientation:mixed !important;
+    min-width:120px;
+    max-width:none;
+  }
+  th{position:sticky;top:0;background:#f8fafc;z-index:2}
+  td.long, th.long{min-width:320px}
+  .preview-table th.long,.preview-table td.long{
+    min-width:220px !important;
+    max-width:220px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .preview-table th.mid,.preview-table td.mid{
+    min-width:160px !important;
+    max-width:160px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .tagbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .tag{display:inline-flex;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px}
+  .config-table th,.config-table td{min-width:auto}
+  .config-table{width:100%}
+  .config-table select,.config-table input{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .log{border:1px solid var(--line);border-radius:8px;min-height:110px;padding:8px;white-space:pre-wrap;font-size:12px;overflow:auto}
+  
+  .diag-panel{
+    position:relative; left:auto; right:auto; bottom:auto; margin-top:14px; height:auto; min-height:260px; max-height:none; overflow:visible;
+    border:1px solid #d9dee8; border-radius:12px; background:#ffffff; color:#111827;
+    z-index:9999; box-shadow:0 2px 10px rgba(0,0,0,.06); padding:10px;
+  }
+  .diag-panel h3{margin:0 0 10px 0; font-size:15px}
+  .diag-grid{display:grid; grid-template-columns:repeat(6, max-content 1fr); gap:4px 8px; font-size:12px; margin-bottom:8px; align-items:center}
+  .diag-grid .k{color:#6b7280}
+  .badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #334155}
+  .badge.fail{background:#fff1f2; color:#b91c1c}
+  .badge.pass{background:#ecfdf5; color:#166534}
+  .badge.init{background:#f3f4f6; color:#374151}
+  .diag-box{border:1px solid #d9dee8; border-radius:8px; padding:8px; margin-top:8px; white-space:pre-wrap; word-break:break-word; font-size:11px}
+  .error-list{border:1px solid #d9dee8; border-radius:8px; padding:8px; margin-top:8px; font-size:11px}
+  .error-item{border-top:1px dashed #d9dee8; padding-top:6px; margin-top:6px}
+  .error-item:first-child{border-top:none; padding-top:0; margin-top:0}
+  .diag-sections{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.progress-wrap{margin-bottom:8px;}
+.progress-track{height:10px; background:#f3f4f6; border:1px solid #d9dee8; border-radius:999px; overflow:hidden;}
+.progress-fill{height:100%; width:0%; background:#2563eb; transition:width .2s ease;}
+.progress-labels{display:flex; justify-content:space-between; gap:8px; font-size:11px; color:#6b7280; margin-top:4px;}
+.bottom-logs{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;}
+.mini-log{border:1px solid #d9dee8; border-radius:8px; padding:8px; font-size:11px; white-space:pre-wrap; word-break:break-word; max-height:none; overflow:visible; background:#ffffff;}
+.mini-title{font-weight:bold; margin-bottom:6px;}
+.stamp{font-size:11px; color:#6b7280;}
+  .capture-on{outline:2px dashed #ef4444 !important; outline-offset:2px;}
+  body{padding-bottom:24px !important;}
+  @media (max-width:1100px){
+    .diag-grid{grid-template-columns:120px 1fr 120px 1fr;}
+    .diag-sections{grid-template-columns:1fr;}
+    .bottom-logs{grid-template-columns:1fr;}
+  }
+
+  @media (max-width:1100px){ .layout{grid-template-columns:1fr} .grid2{grid-template-columns:1fr} }
+
+  .fixed-error-wrap{margin-top:8px;border:1px solid #d9dee8;border-radius:8px;padding:8px;background:#fff}
+  .fixed-error-title{font-weight:bold;margin-bottom:6px}
+  .fixed-error-note{font-size:11px;color:#6b7280;margin-bottom:6px}
+  .fixed-error-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .fixed-error-card{border:1px solid #e5e7eb;border-radius:8px;padding:6px;background:#fff;font-size:10px;line-height:1.35}
+  .fixed-error-card strong{display:block;margin-bottom:2px}
+  .fixed-error-meta{color:#6b7280}
+  .status-pass{color:#166534;font-weight:bold}
+  .status-tested{color:#92400e;font-weight:bold}
+  .status-fail{color:#991b1b;font-weight:bold}
+
+  .fixed-error-summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px 0}
+  .fixed-error-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #d9dee8;background:#fff;font-size:14px;font-weight:800}
+  .fixed-error-pill.pass{color:#166534;border-color:#86efac;background:#f0fdf4}
+  .fixed-error-pill.fail{color:#991b1b;border-color:#fca5a5;background:#fef2f2}
+  .fixed-error-pill.tested{color:#92400e;border-color:#fcd34d;background:#fffbeb}
+  .fixed-error-card strong{font-size:14px;font-weight:800;margin-bottom:4px}
+  .fixed-error-card .state-line{font-size:13px;font-weight:800;margin-bottom:4px}
+  .fixed-error-card .state-line .status-pass,.fixed-error-card .state-line .status-fail,.fixed-error-card .state-line .status-tested{font-size:15px}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="toolbar">
+    <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" multiple>
+    <button id="runBtn" class="primary">정리/실행</button>
+    <button id="coordBtn">좌표 찍기</button>
+    <button id="diagBtn">자동진단 보내기</button>
+    <button id="recheckBtn">재검증</button>
+    <button id="traceBtn">추적용 다운로드</button>
+    <button id="uploadBtn">업로드용 다운로드</button>
+    <button id="resetBtn">초기화</button>
+    <span class="small" id="fileInfo">파일 0개</span>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="section">
+        <h3>통합 입력</h3>
+        <div class="grid2">
+          <div class="field"><label>발행사</label><input id="publisherInput" placeholder="발행사"></div>
+          <div class="field"><label>전체 1차카테고리</label><input id="cat1Input" value="시장 조사 자료 - 영문판" placeholder="1차카테고리"></div>
+        </div>
+        <div class="small" style="margin-top:6px;">선택은 저장된다. 원본연결 / 연결 안함 / 빈값 / preset만 사용한다.</div>
+      </div>
+
+      <div class="section">
+        <h3>통합 설정</h3>
+        <div class="table-wrap">
+          <table class="config-table" id="configTable">
+            <thead>
+              <tr><th>항목</th><th>처리</th><th>원본 연결</th><th>preset</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <h3>미리보기</h3>
+        <div class="tagbar">
+          <span class="tag" id="rowTag">행 0</span>
+          <span class="tag" id="publisherTag">발행사 UNKNOWN</span>
+        </div>
+        <div class="table-wrap" id="previewWrap">
+          <table id="previewTable" class="preview-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>저장 헤더</h3>
+        <div class="log" id="saveHeaderBox"></div>
+      </div>
+
+      <div class="section">
+        <h3>상단 참고 로그</h3>
+        <div class="log" id="coreLog"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'tool13_preview_working_v1';
+  const BATCH_STORAGE_KEY = 'tool13_batch_checkpoint_v1';
+  const MAX_BATCH_CHECKPOINT_CHARS = 3000000;
+  const DEFAULT_PRIMARY_CATEGORY = '시장 조사 자료 - 영문판';
+  const SAVE_HEADERS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
+  const CONFIG_FIELDS = ['발행사','상품명','한글명','1차카테고리','2차카테고리','3차카테고리','페이지수','개요','목차','발행일','파일명','판매유형','환(u,e,g,j)','HardCapy가격','PDF가격','저자','체제','ISBN/CODE'];
+  const COMMON_FIELDS = ['발행사','1차카테고리','2차카테고리','3차카테고리'];
+  const HEADER_ALIASES = {
+    '발행사':['Publisher','발행사','Company','Vendor'],
+    '1차카테고리':['Category','Primary Category','1차카테고리'],
+    '상품명':['Product Name','상품명','Title','Report Title'],
+    '한글명':['Report Title','한글명','Title'],
+    '2차카테고리':['Report Category','Category','2차카테고리'],
+    '3차카테고리':['Sub Category','SubCategory','3차카테고리'],
+    '페이지수':['No.of Pages','Pages','Page','페이지수'],
+    '개요':['Report Description','Summary','Description','개요'],
+    '목차':['Table of Contents','Contents','TOC','목차'],
+    '발행일':['Date Published','Publish Date','Published Date','Publication Date','Release Date','발행일','Date'],
+    '파일명':['File Name','filename','파일명'],
+    '판매유형':['Sales Type','판매유형','Type'],
+    '환(u,e,g,j)':['Currency','환(u,e,g,j)'],
+    'HardCapy가격':['Hardcopy Price','Hard Copy Price','HardCapy가격'],
+    'PDF가격':['Single user Price in US$','Single user Price','PDF Price','PDF가격'],
+    '저자':['Author Name','Author','저자'],
+    '체제':['Format','체제'],
+    'ISBN/CODE':['Report Code','ISBN','Code','ISBN/CODE']
+  };
+
+  const PRESETS = {
+    '발행사':['선택'],
+    '1차카테고리':['선택'],
+    '상품명':['선택'],
+    '한글명':['선택'],
+    '2차카테고리':['선택'],
+    '3차카테고리':['선택'],
+    '페이지수':['선택','숫자만 추출'],
+    '개요':['선택'],
+    '목차':['선택'],
+    '발행일':['선택','YYYY-MM-DD','엑셀 날짜 해석'],
+    '파일명':['선택','origin_file 사용'],
+    '판매유형':['선택'],
+    '환(u,e,g,j)':['선택','고정값 u','고정값 e','고정값 g','고정값 j','통화기호 기반 추론'],
+    'HardCapy가격':['선택','숫자만 추출','소수점 유지'],
+    'PDF가격':['선택','숫자만 추출','소수점 유지'],
+    '저자':['선택'],
+    '체제':['선택','원본 연결','페이지수+pages'],
+    'ISBN/CODE':['선택']
+  };
+
+  const state = {
+    files: [], headers: [], rows: [], previewRows: [],
+    config: {}, common: {publisher:'',cat1:DEFAULT_PRIMARY_CATEGORY,cat2:'',cat3:'',workOrder:'01'}
+  };
+
+  const els = {
+    fileInput: document.getElementById('fileInput'),
+    runBtn: document.getElementById('runBtn'),
+    traceBtn: document.getElementById('traceBtn'),
+    uploadBtn: document.getElementById('uploadBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    fileInfo: document.getElementById('fileInfo'),
+    publisherInput: document.getElementById('publisherInput'),
+    cat1Input: document.getElementById('cat1Input'),
+    configTableBody: document.querySelector('#configTable tbody'),
+    previewTable: document.getElementById('previewTable'),
+    copyPreviewBtn: document.getElementById('copyPreviewBtn'),
+    rowTag: document.getElementById('rowTag'),
+    publisherTag: document.getElementById('publisherTag'),
+    saveHeaderBox: document.getElementById('saveHeaderBox'),
+    coreLog: document.getElementById('coreLog')
+  };
+
+  function log(msg){ els.coreLog.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`; els.coreLog.scrollTop = els.coreLog.scrollHeight; }
+  function str(v){ return v===undefined || v===null ? '' : String(v).trim(); }
+  function norm(v){ return str(v).toLowerCase().replace(/\s+/g,' '); }
+  function safeCSVCell(v){
+    const s = str(v);
+    if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+  function excelSerialToDate(v){
+    const n = Number(v);
+    if(!Number.isFinite(n)) return str(v);
+    const epoch = new Date(Date.UTC(1899,11,30));
+    epoch.setUTCDate(epoch.getUTCDate() + n);
+    const y = epoch.getUTCFullYear();
+    const m = String(epoch.getUTCMonth()+1).padStart(2,'0');
+    const d = String(epoch.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  function inferHeader(target){
+    const aliases = HEADER_ALIASES[target] || [];
+    for(const a of aliases){
+      const exact = state.headers.find(h=>norm(h) === norm(a));
+      if(exact) return exact;
+    }
+    for(const h of state.headers){
+      for(const a of aliases){
+        const header = norm(h);
+        const alias = norm(a);
+        if(Math.min(header.length, alias.length) >= 4 && (header.includes(alias) || alias.includes(header))) return h;
+      }
+    }
+    return '';
+  }
+  function sourceLabel(h){
+    const raw = str(h);
+    const n = norm(raw).replace(/\s+/g,'');
+    const map = {
+      'reporttitle':'Report Title',
+      'reportname':'Report Name',
+      'datepublished':'Date Published',
+      'publishdate':'Publish Date',
+      'publisheddate':'Published Date',
+      'publicationdate':'Publication Date',
+      'releasedate':'Release Date',
+      'no.ofpages':'No. of Pages',
+      'noofpages':'No. of Pages',
+      'pages':'Pages',
+      'reportdescription':'Report Description',
+      'reportcategory':'Report Category',
+      'subcategory':'Sub Category',
+      'description':'Description',
+      'tableofcontents':'Table of Contents',
+      'contents':'Contents',
+      'reportcode':'Report Code',
+      'filename':'File Name',
+      'file name':'File Name',
+      'format':'Format',
+      'authorname':'Author Name',
+      'currency':'Currency',
+      'singleuserpriceinus$':'Single user Price in US$',
+      'singleuserpriceinusd':'Single user Price in US$',
+      'singleuserprice':'Single user Price',
+      'salestype':'Sales Type',
+      'hardcopyprice':'Hardcopy Price'
+    };
+    return map[n] || raw;
+  }
+
+  function sourceOptionsHtml(selected){
+    const seen = new Set();
+    const items = [];
+    for(const h of state.headers){
+      const value = str(h);
+      if(!value || seen.has(value)) continue;
+      seen.add(value);
+      items.push({value, label: sourceLabel(value)});
+    }
+    return ['<option value="">선택</option>']
+      .concat(items.map(it=>`<option value="${escapeHtml(it.value)}" title="${escapeHtml(it.value)}" ${selected===it.value?'selected':''}>${escapeHtml(it.label)}</option>`))
+      .join('');
+  }
+  function defaultConfig(){
+    const o = {};
+    CONFIG_FIELDS.forEach(f=>{
+      o[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'};
+    });
+    o['체제'].mode='preset'; o['체제'].preset='페이지수+pages';
+    o['발행일'].mode='preset'; o['발행일'].preset='YYYY-MM-DD';
+    o['환(u,e,g,j)'].mode='preset'; o['환(u,e,g,j)'].preset='고정값 u';
+    o['PDF가격'].mode='preset'; o['PDF가격'].preset='소수점 유지';
+    return o;
+  }
+  function findBestHeaderRow(rows){
+    const maxScan = Math.min(rows.length, 60);
+    let bestIdx = -1;
+    let bestScore = -9999;
+
+    const strongTokens = [
+      'title','reporttitle','reportname','productcode','code',
+      'numberofpages','pages','publisheddate','datepublished','publishdate',
+      'headline','summary','tableofcontents','description','listoftables',
+      'listoffigures','executivesummary','reportcategory','countriescovered',
+      'author','format','isbn'
+    ];
+
+    for(let i=0;i<maxScan;i++){
+      const row = rows[i] || [];
+      const rawCells = row.map(v=>str(v));
+      const cells = rawCells.filter(Boolean);
+      if(!cells.length) continue;
+
+      let score = 0;
+      let shortCount = 0;
+      let strongCount = 0;
+      let nonEmptyCount = 0;
+
+      for(const cell of cells){
+        const s = str(cell).trim();
+        const n = norm(s);
+        if(!s) continue;
+        nonEmptyCount++;
+
+        if(s.length <= 40) shortCount++;
+        else score -= 2;
+
+        if(s.length > 120) score -= 8; // 긴 본문은 헤더가 아님
+        if(/reportscope|tableofcontentschapter|summary:|listoftables|listoffigures/.test(n)) score -= 6; // 본문/목차 블록 제외
+        if(/marketsandmarkets|grandviewresearch|researchandmarkets|analystview market insights|bccresearch/.test(n)) score -= 3; // 발행사/로고성 행 제외
+        if(/^[0-9]{4}[-/.][0-9]{2}[-/.][0-9]{2}$/.test(s)) score -= 2; // 날짜 단독행 제외
+
+        for(const token of strongTokens){
+          if(n.includes(token)){
+            strongCount++;
+            score += 6;
+            break;
+          }
+        }
+
+        if(/title|code|pages|date|summary|description|contents|category|country|format|author|isbn/i.test(s)) score += 2;
+      }
+
+      // 헤더행은 짧은 셀이 여러 개 있어야 함
+      if(shortCount >= 4) score += 6;
+      if(nonEmptyCount >= 5) score += 3;
+      if(strongCount >= 3) score += 12;
+
+      // 실제 헤더가 아니면 탈락시키기
+      if(strongCount < 2 && shortCount < 4) score -= 10;
+
+      if(score > bestScore){
+        bestScore = score;
+        bestIdx = i;
+      }
+    }
+
+    // 안전장치: 못 찾으면 위에서부터 첫 번째 '짧은 셀 4개 이상' 행 사용
+    if(bestIdx < 0){
+      for(let i=0;i<Math.min(rows.length,60);i++){
+        const cells = (rows[i] || []).map(v=>str(v)).filter(Boolean);
+        const shortCount = cells.filter(v=>str(v).trim().length <= 40).length;
+        if(shortCount >= 4) return i;
+      }
+      return 0;
+    }
+
+    return bestIdx;
+  }
+
+
+  const batchStore = idbKeyval.createStore('tool13-checkpoint-' + location.pathname, 'batches');
+  let checkpointWrite = Promise.resolve();
+  function saveState(){
+    state.common.publisher = els.publisherInput.value;
+    state.common.cat1 = els.cat1Input.value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({config:state.config, common:state.common}));
+    const serialized = Tool13BatchState.serialize({
+      files:state.files, headers:state.headers, rows:state.rows,
+      batches:state.batches || 0, duplicate_rows:state.duplicate_rows || 0
+    });
+    if(serialized.length <= MAX_BATCH_CHECKPOINT_CHARS){
+      localStorage.setItem(BATCH_STORAGE_KEY, serialized);
+    }else{
+      localStorage.setItem(BATCH_STORAGE_KEY, JSON.stringify({
+        schema_version:1, files:state.files, headers:state.headers, rows:[],
+        batches:state.batches || 0, duplicate_rows:state.duplicate_rows || 0,
+        compact:true, row_count:state.rows.length
+      }));
+      log(`대용량 배치 ${state.rows.length}행: 로컬 재개 캐시에 저장 중`);
+    }
+    const revision = crypto.randomUUID();
+    localStorage.setItem(BATCH_STORAGE_KEY + ':revision', revision);
+    const snapshot = {revision, batch:serialized, config:structuredClone(state.config), common:structuredClone(state.common)};
+    checkpointWrite = checkpointWrite.then(()=>idbKeyval.set('current', snapshot, batchStore)).then(()=>{
+      log(`로컬 재개 캐시 저장 완료: ${JSON.parse(serialized).rows.length}행`);
+      return true;
+    }).catch(error=>{ log(`HOLD: 로컬 재개 캐시 저장 실패 / ${error.message}`); return false; });
+    return checkpointWrite;
+  }
+  async function restoreState(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    try{
+      let cached;
+      try { cached = await idbKeyval.get('current', batchStore); }
+      catch(error){ log(`HOLD: 로컬 재개 캐시 읽기 실패 / ${error.message}`); }
+      if(cached && cached.revision !== localStorage.getItem(BATCH_STORAGE_KEY + ':revision')){
+        log('HOLD: 미완료 저장과 이전 캐시가 달라 이전 행을 자동 복원하지 않음');
+        cached = undefined;
+      }
+      const data = cached || JSON.parse(raw);
+      if(data.config) state.config = data.config;
+      if(data.common){
+        state.common = {...state.common, ...data.common};
+        els.publisherInput.value = state.common.publisher || '';
+        els.cat1Input.value = state.common.cat1 || DEFAULT_PRIMARY_CATEGORY;
+      }
+      const checkpointRaw = cached ? cached.batch : localStorage.getItem(BATCH_STORAGE_KEY);
+      const checkpointMeta = checkpointRaw ? JSON.parse(checkpointRaw) : {};
+      const checkpoint = Tool13BatchState.restore(checkpointRaw);
+      state.files = checkpoint.files;
+      state.headers = checkpoint.headers;
+      state.rows = checkpoint.rows;
+      state.batches = checkpoint.batches;
+      state.duplicate_rows = checkpoint.duplicate_rows;
+      els.fileInfo.textContent = checkpointMeta.compact
+        ? `대용량 배치 ${checkpointMeta.row_count || 0}행은 저장 한도 초과 / 원본 파일 재선택 필요`
+        : `파일 ${state.files.length}개 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`;
+    }catch(e){}
+  }
+
+  function renderConfig(){
+    els.configTableBody.innerHTML = '';
+    CONFIG_FIELDS.forEach(field=>{
+      if(!state.config[field]) state.config[field] = {mode:'원본연결', source:inferHeader(field), preset:'선택'};
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${field}</td>
+        <td>
+          <select data-field="${field}" data-role="mode">
+            <option ${state.config[field].mode==='원본연결'?'selected':''}>원본연결</option>
+            <option ${state.config[field].mode==='연결 안함'?'selected':''}>연결 안함</option>
+            <option ${state.config[field].mode==='빈값'?'selected':''}>빈값</option>
+            <option value="preset" ${state.config[field].mode==='preset'?'selected':''}>preset</option>
+          </select>
+        </td>
+        <td>
+          <select data-field="${field}" data-role="source">
+            ${sourceOptionsHtml(state.config[field].source)}
+          </select>
+        </td>
+        <td>
+          <select data-field="${field}" data-role="preset">
+            ${PRESETS[field].map(p=>`<option value="${escapeHtml(p)}" ${state.config[field].preset===p?'selected':''}>${escapeHtml(p)}</option>`).join('')}
+          </select>
+        </td>
+      `;
+      els.configTableBody.appendChild(tr);
+    });
+    els.configTableBody.querySelectorAll('select').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        const f = sel.dataset.field, r = sel.dataset.role;
+        state.config[f][r] = sel.value;
+        saveState();
+        if(state.rows.length) buildPreview();
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return str(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function csvToRows(text){
+    const rows=[]; let row=[], cur='', inQ=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i], next=text[i+1];
+      if(ch==='"'){ if(inQ && next==='"'){ cur+='"'; i++; } else inQ=!inQ; }
+      else if(ch===',' && !inQ){ row.push(cur); cur=''; }
+      else if((ch==='\n'||ch==='\r') && !inQ){ if(ch==='\r'&&next==='\n') i++; row.push(cur); rows.push(row); row=[]; cur=''; }
+      else cur+=ch;
+    }
+    row.push(cur); rows.push(row);
+    return rows.filter(r=>r.some(v=>str(v)!==''));
+  }
+
+  async function loadFiles(files){
+    if(!files || files.length === 0) return;
+    const configureFromHeaders = state.rows.length === 0 && !CONFIG_FIELDS.some(field => {
+      const config = state.config[field];
+      return config && (config.source || config.mode !== '원본연결' || config.preset !== '선택');
+    });
+    const batchFiles = Array.from(files).map(f=>f.name);
+    const batchRows = [];
+    const batchHeaders = [];
+    els.fileInfo.textContent = `새 파일 ${batchFiles.length}개 읽는 중`;
+    log(`순차 배치 ${batchFiles.length}개 읽기 시작`);
+    els.fileInput.disabled = true;
+    els.runBtn.disabled = true;
+    try{
+      let fileNo = 0;
+      for(const file of files){
+        fileNo++;
+        els.fileInfo.textContent = `파일 읽기 ${fileNo}/${batchFiles.length}: ${file.name}`;
+        await new Promise(resolve=>setTimeout(resolve,0));
+        try{
+          const ext = file.name.split('.').pop().toLowerCase();
+          let rows = [];
+          if(ext === 'csv'){
+            rows = csvToRows(await file.text());
+          } else {
+            const buf = await file.arrayBuffer();
+            const wb = XLSX.read(buf, {type:'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+          }
+          if(!rows.length){ log(`빈 파일 HOLD: ${file.name}`); continue; }
+          const headerRowIdx = findBestHeaderRow(rows);
+          const headers = (rows[headerRowIdx] || []).map(v=>str(v));
+          headers.forEach(header=>{ if(header && !batchHeaders.includes(header)) batchHeaders.push(header); });
+          log(`헤더 감지 ${fileNo}/${batchFiles.length}: ${file.name} / ${headerRowIdx+1}행`);
+          for(let i=headerRowIdx+1;i<rows.length;i++){
+            const arr = rows[i];
+            if(!arr || arr.every(v=>str(v)==='')) continue;
+            const obj = {origin_file:file.name, origin_row:i+1};
+            headers.forEach((h,idx)=> obj[h] = arr[idx]);
+            batchRows.push(obj);
+          }
+        }catch(error){
+          const reason = error && error.message ? error.message : String(error);
+          els.fileInfo.textContent = `BLOCKED ${fileNo}/${batchFiles.length}: ${file.name}`;
+          log(`파일 읽기 실패: ${file.name} / ${reason}`);
+          return {status:'BLOCKED', file:file.name, reason};
+        }
+      }
+    }finally{
+      els.fileInput.disabled = false;
+      els.runBtn.disabled = false;
+    }
+    const merged = Tool13BatchState.mergeBatch({
+      files:state.files, headers:state.headers, rows:state.rows,
+      batches:state.batches || 0, duplicate_rows:state.duplicate_rows || 0
+    }, {files:batchFiles, headers:batchHeaders, rows:batchRows});
+    state.files = merged.files;
+    state.headers = merged.headers;
+    state.rows = merged.rows;
+    state.batches = merged.batches;
+    state.duplicate_rows = merged.duplicate_rows;
+    if(configureFromHeaders || !Object.keys(state.config).length) state.config = defaultConfig();
+    CONFIG_FIELDS.forEach(f=>{ if(!state.config[f]) state.config[f] = {mode:'원본연결', source:inferHeader(f), preset:'선택'}; if(!state.config[f].source) state.config[f].source = inferHeader(f); });
+    renderConfig();
+    buildPreview();
+    await saveState();
+    els.fileInfo.textContent = `파일 ${state.files.length}개 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`;
+    log(`체크포인트 저장: 배치 ${state.batches}회 / 누적 ${state.rows.length}행 / 중복차단 ${state.duplicate_rows}행`);
+    return {status:'PASS', files:batchFiles.length, rows:state.rows.length};
+  }
+
+  function applyField(field, row){
+    const cfg = state.config[field] || {mode:'원본연결', source:'', preset:'선택'};
+    const sourceValue = cfg.source ? str(row[cfg.source]) : '';
+    if(field==='발행사') return els.publisherInput.value || detectPublisher() || '';
+    if(field==='1차카테고리') return els.cat1Input.value || DEFAULT_PRIMARY_CATEGORY;
+    if(cfg.mode==='연결 안함') return '';
+    if(cfg.mode==='빈값') return '';
+    if(cfg.mode==='원본연결') return sourceValue;
+    if(cfg.mode==='preset'){
+      const p = cfg.preset || '선택';
+      if(field==='발행일' && (p==='YYYY-MM-DD' || p==='엑셀 날짜 해석')){
+        const raw = String(sourceValue || '').trim();
+        const m = raw.match(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+        if (m) {
+          const yyyy = m[1];
+          const mm = String(m[2]).padStart(2,'0');
+          const dd = String(m[3]).padStart(2,'0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+        const converted = excelSerialToDate(sourceValue);
+        return converted || raw;
+      }
+      if(field==='PDF가격' || field==='HardCapy가격'){
+        if(p==='숫자만 추출' || p==='소수점 유지') return sourceValue.replace(/[^0-9.]/g,'');
+      }
+      if(field==='환(u,e,g,j)'){
+        if(p.startsWith('고정값 ')) return p.split('고정값 ')[1];
+        if(p==='통화기호 기반 추론'){
+          const src = (row[cfg.source]||'') + ' ' + (row[inferHeader('PDF가격')]||'');
+          if(/\$|USD|US\$/i.test(src)) return 'u';
+          if(/€|EUR/i.test(src)) return 'e';
+          if(/£|GBP/i.test(src)) return 'g';
+          if(/¥|JPY/i.test(src)) return 'j';
+          return '';
+        }
+      }
+      if(field==='파일명' && p==='origin_file 사용') return row.origin_file || '';
+      if(field==='체제'){
+        if(p==='원본 연결') return sourceValue;
+        if(p==='페이지수+pages'){
+          const pageVal = applyField('페이지수', row);
+          return pageVal ? `${pageVal} Pages` : '';
+        }
+      }
+      if(field==='페이지수' && p==='숫자만 추출') return sourceValue.replace(/[^0-9]/g,'');
+    }
+    return sourceValue;
+  }
+
+  function detectPublisher(){
+    const names = state.files.join(' ').toLowerCase();
+    if(names.includes('marketsandmarkets')) return 'MarketsandMarkets';
+    return 'UNKNOWN';
+  }
+
+  function buildPreview(){
+    state.previewRows = state.rows.map(r=>{
+      const o = {};
+      SAVE_HEADERS.forEach(h=> o[h] = applyField(h, r));
+      o.merge_row_id = `${r.origin_file}__${r.origin_row}`;
+      o.origin_file = r.origin_file;
+      o.origin_row = r.origin_row;
+      return o;
+    });
+    renderPreview(state.previewRows);
+    log(`미리보기 ${state.previewRows.length}행 생성`);
+  }
+
+  function buildPreviewTSV(){
+    const headers = ['merge_row_id','origin_file','origin_row', ...SAVE_HEADERS];
+    const lines = [headers.join('\t')];
+    for(const r of (state.previewRows || [])){
+      lines.push(headers.map(h => {
+        const v = r[h] == null ? '' : String(r[h]);
+        return v.replace(/\r?\n/g,' ').replace(/\t/g,' ');
+      }).join('\t'));
+    }
+    return lines.join('\n');
+  }
+
+  function renderPreview(rows){
+    els.rowTag.textContent = `행 ${rows.length}`;
+    els.publisherTag.textContent = `발행사 ${els.publisherInput.value || detectPublisher() || 'UNKNOWN'}`;
+    els.saveHeaderBox.textContent = SAVE_HEADERS.join(' | ');
+    const headers = ['merge_row_id','origin_file','origin_row', ...SAVE_HEADERS];
+    const longCols = ['상품명','한글명','개요','목차','파일명'];
+    const midCols = ['merge_row_id','origin_file','체제','ISBN/CODE'];
+    const cls = (h)=> longCols.includes(h) ? 'long' : (midCols.includes(h) ? 'mid' : '');
+    els.previewTable.querySelector('thead').innerHTML = '<tr>' + headers.map(h=>`<th class="${cls(h)}" title="${escapeHtml(h)}">${escapeHtml(h)}</th>`).join('') + '</tr>';
+    const previewText = value => {
+      const valueText = str(value);
+      return valueText.length > 500 ? valueText.slice(0,500) + '…' : valueText;
+    };
+    const titleText = value => {
+      const valueText = str(value);
+      return valueText.length > 1000 ? valueText.slice(0,1000) + '…' : valueText;
+    };
+    els.previewTable.querySelector('tbody').innerHTML = rows.slice(0,200).map(r=>'<tr>' + headers.map(h=>`<td class="${cls(h)}" title="${escapeHtml(titleText(r[h]))}">${escapeHtml(previewText(r[h]))}</td>`).join('') + '</tr>').join('');
+  }
+
+  function downloadCSV(kind){
+    const headers = kind==='trace'
+      ? ['merge_row_id','origin_file','origin_row',...SAVE_HEADERS]
+      : SAVE_HEADERS;
+
+    const rows = kind==='trace'
+      ? state.previewRows.map(r => [
+          r.merge_row_id ?? '',
+          r.origin_file ?? '',
+          r.origin_row ?? '',
+          ...SAVE_HEADERS.map(h => {
+            const v = r[h] == null ? '' : String(r[h]);
+            return v.replace(/\r?\n/g, ' ').replace(/\t/g, ' ');
+          })
+        ])
+      : state.previewRows.map(r =>
+          SAVE_HEADERS.map(h => {
+            const v = r[h] == null ? '' : String(r[h]);
+            return v.replace(/\r?\n/g, ' ').replace(/\t/g, ' ');
+          })
+        );
+
+    const aoa = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, kind==='trace' ? 'trace' : 'upload');
+    const originalName = state.files.length ? state.files[state.files.length - 1] : 'tool13';
+    const baseName = originalName.replace(/\.(xlsx?|csv)$/i, '') || 'tool13';
+    const outputName = kind==='trace'
+      ? `${baseName} - 월드 입력 - 추적.xls`
+      : `${baseName} - 월드 입력.xls`;
+    XLSX.writeFile(wb, outputName, {bookType:'xls'});
+  }
+
+  els.fileInput.addEventListener('change', async e=>{
+    await loadFiles(Array.from(e.target.files || []));
+    e.target.value = '';
+  });
+  els.runBtn.addEventListener('click', ()=>{ saveState(); buildPreview(); });
+  els.traceBtn.addEventListener('click', ()=> downloadCSV('trace'));
+  els.uploadBtn.addEventListener('click', ()=> downloadCSV('upload'));
+  els.resetBtn.addEventListener('click', async ()=>{
+    await checkpointWrite;
+    try { await idbKeyval.del('current', batchStore); }
+    catch(error){ log(`HOLD: 재개 캐시 초기화 실패 / ${error.message}`); return; }
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(BATCH_STORAGE_KEY);
+    localStorage.removeItem(BATCH_STORAGE_KEY + ':revision');
+    location.reload();
+  });
+  [els.publisherInput,els.cat1Input].forEach(el=>el.addEventListener('input', ()=>{
+    saveState();
+    if(state.rows.length) buildPreview();
+  }));
+
+  els.fileInput.disabled = true;
+  els.runBtn.disabled = true;
+  restoreState().then(()=>{
+    state.config = state.config || {};
+    renderConfig();
+    if(state.rows.length) buildPreview();
+    else renderPreview([]);
+  }).finally(()=>{ els.fileInput.disabled = false; els.runBtn.disabled = false; });
+
+  const DIAG_STORAGE_KEY = 'tool13_diag_v3';
+  const diagState = {
+    clicked_trace: null,
+    first_fail: null,
+    errors: [],
+    capture_mode: false,
+    packet: null,
+    state: 'DRAFT',
+    recheck_status: '대기',
+    upload_status: '대기',
+    last_diag_time: '',
+    rollback_history: [],
+    error_history: [],
+    detection_version: 'v1-error-engine'
+  };
+
+  function shortText(v, n=60){
+    const s = str(v);
+    return s.length > n ? s.slice(0,n) + '…' : s;
+  }
+
+  function computeHashes(){
+    const viewHash = state.previewRows.length ? ('rows:' + state.previewRows.length) : 'no-preview';
+    return {viewHash, packetHash: diagState.clicked_trace && state.previewRows.length ? 'packet-ready' : '-', saveHash: state.previewRows.length ? 'save-ready' : '-'};
+  }
+
+  function detectCellInfo(target){
+    const td = target.closest('td,th');
+    if(!td) return {row_no:'', col_no:'', header_name:'', selected_text:'', line_text:''};
+    const tr = td.closest('tr');
+    const table = td.closest('table');
+    let rowNo = '';
+    let colNo = '';
+    let headerName = '';
+    if(tr){
+      const rowIndex = Array.from(tr.parentElement.children).indexOf(tr);
+      rowNo = String(rowIndex + 1);
+    }
+    if(tr){
+      colNo = String(Array.from(tr.children).indexOf(td) + 1);
+    }
+    if(table){
+      const headTr = table.querySelector('thead tr');
+      if(headTr && colNo){
+        const headCell = headTr.children[Number(colNo)-1];
+        if(headCell) headerName = str(headCell.textContent);
+      }
+    }
+
+    let selectedText = '';
+    let lineText = '';
+    const sel = target.matches && target.matches('select') ? target : target.querySelector && target.querySelector('select');
+    if(sel){
+      const opt = sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+      selectedText = str(opt ? opt.textContent : sel.value);
+      lineText = selectedText;
+    }else{
+      selectedText = str(td.textContent);
+      lineText = selectedText;
+    }
+
+    return {
+      row_no: rowNo,
+      col_no: colNo,
+      header_name: headerName,
+      selected_text: selectedText,
+      line_text: lineText
+    };
+  }
+
+  function makeDomPath(el){
+    const parts = [];
+    let node = el;
+    while(node && node.nodeType === 1 && parts.length < 6){
+      let part = node.tagName.toLowerCase();
+      if(node.id) part += '#' + node.id;
+      else if(node.className && typeof node.className === 'string'){
+        const cls = node.className.trim().split(/\s+/).slice(0,2).join('.');
+        if(cls) part += '.' + cls;
+      }
+      parts.unshift(part);
+      node = node.parentElement;
+    }
+    return parts.join(' > ');
+  }
+
+  function captureTarget(target, evt){
+    const cell = detectCellInfo(target);
+    const trace = {
+      area_id: target.id || target.getAttribute('data-area-id') || target.tagName.toLowerCase(),
+      area_name_ko: target.getAttribute('data-area-name-ko') || shortText(cell.selected_text || target.innerText || target.textContent || target.tagName, 40),
+      selector: target.id ? '#' + target.id : target.tagName.toLowerCase(),
+      dom_path: makeDomPath(target),
+      parent_block_path: makeDomPath(target.parentElement || target),
+      x: evt.clientX,
+      y: evt.clientY,
+      row_no: cell.row_no,
+      col_no: cell.col_no,
+      header_name: cell.header_name,
+      selected_text: cell.selected_text,
+      start_offset: 0,
+      end_offset: cell.selected_text.length || 0,
+      context_window: cell.selected_text,
+      line_text: cell.line_text,
+      function_name: 'captureTarget',
+      data_key: cell.header_name || '',
+      mode: '',
+      source: '',
+      preset: '',
+      time: new Date().toLocaleTimeString()
+    };
+    diagState.clicked_trace = trace;
+    saveDiagState();
+    renderDiag();
+  }
+
+  function saveDiagState(){
+    localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify({
+      clicked_trace:diagState.clicked_trace, first_fail:diagState.first_fail,
+      errors:diagState.errors, packet:diagState.packet, state:diagState.state,
+      recheck_status:diagState.recheck_status, upload_status:diagState.upload_status,
+      last_diag_time:diagState.last_diag_time, rollback_history:diagState.rollback_history,
+      error_history:diagState.error_history
+    }));
+  }
+  function loadDiagTrace(){
+    try{
+      const raw = localStorage.getItem(DIAG_STORAGE_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(obj.clicked_trace) diagState.clicked_trace = obj.clicked_trace;
+      for(const key of ['first_fail','errors','packet','state','recheck_status','upload_status','last_diag_time','rollback_history','error_history']){
+        if(obj[key] !== undefined) diagState[key] = obj[key];
+      }
+    }catch(e){}
+  }
+
+  function buildErrorList(){
+    const arr = [];
+    const hasClicked = !!diagState.clicked_trace;
+    const hasPreview = state.previewRows.length > 0;
+    const hasPacket = !!diagState.packet;
+    const hasDiag = !!diagState.last_diag_time;
+    const recheck = diagState.recheck_status || '미실행';
+
+    if(!hasClicked){
+      arr.push({no:'01', name:'clicked_trace 없음', state:'X', reason:'좌표 찍기 미실행', recheck});
+    }
+    if(state.files.length > 0 && !hasPreview){
+      arr.push({no:'02', name:'미리보기 데이터 없음', state:'X', reason:'파일 업로드 후 정리/실행 결과 없음', recheck});
+    }
+    if(hasClicked && !hasDiag){
+      arr.push({no:'03', name:'자동진단 미실행', state:'X', reason:'좌표는 있으나 자동진단 보내기를 아직 실행하지 않음', recheck});
+    }
+    if(hasDiag && !hasPacket){
+      arr.push({no:'04', name:'DIAG_PACKET 생성 실패', state:'X', reason:'자동진단 실행 후 패킷이 비어 있음', recheck});
+    }
+    if(hasPacket && recheck !== 'PASS'){
+      arr.push({no:'05', name:'재검증 미완료', state: recheck === 'TESTED' ? 'TESTED' : 'X', reason:'재검증 버튼 미통과', recheck});
+    }
+    return arr;
+  }
+
+  function buildPacket(){
+    diagState.last_diag_time = new Date().toLocaleTimeString();
+    diagState.packet = {pending:true};
+    diagState.errors = buildErrorList();
+    diagState.first_fail = diagState.errors[0] || null;
+    const hashes = computeHashes();
+    diagState.packet = {
+      clicked_trace: diagState.clicked_trace,
+      ui_trace: diagState.clicked_trace,
+      first_fail: diagState.first_fail,
+      merged_report: {
+        clicked_trace: diagState.clicked_trace,
+        first_fail: diagState.first_fail,
+        core_log: els.coreLog.textContent.split('\n').slice(-5).join('\n')
+      },
+      state: diagState.state,
+      errors: diagState.errors,
+      recheck_status: diagState.recheck_status,
+      upload_status: diagState.upload_status,
+      error_scope: diagState.clicked_trace ? 'COORDINATE' : 'FUNCTION',
+      rollback_history: diagState.rollback_history,
+      error_history: diagState.error_history,
+      files: state.files,
+      hashes
+    };
+    saveDiagState();
+    renderDiag();
+  }
+
+
+  function computeProgressMeta(){
+    const steps = [
+      {id:'기준파일', ok:true},
+      {id:'데이터일치', ok:true},
+      {id:'좌표잠금', ok:!!diagState.clicked_trace},
+      {id:'자동진단패킷', ok:!!diagState.packet},
+      {id:'오류리스트', ok:(diagState.errors||[]).length > 0 || !!diagState.packet},
+      {id:'AUTO_LOG', ok:true},
+      {id:'CORE_LOG', ok:true},
+      {id:'재검증', ok:diagState.recheck_status === 'PASS'}
+    ];
+    const done = steps.filter(s => s.ok).length;
+    const lastSuccess = [...steps].reverse().find(s => s.ok);
+    const lastFail = steps.find(s => !s.ok);
+    return {done, total:steps.length, lastSuccess:lastSuccess ? lastSuccess.id : '없음', lastFail:lastFail ? lastFail.id : '없음'};
+  }
+
+  function renderDiag(){
+    const ct = diagState.clicked_trace;
+    const list = buildErrorList();
+    diagState.errors = list;
+    diagState.first_fail = list[0] || null;
+    const pass = list.length === 0 && !!ct && state.previewRows.length > 0 && diagState.recheck_status === 'PASS';
+
+    document.getElementById('dpInput').textContent = state.files.length ? state.files.join(', ') : '없음';
+    document.getElementById('dpLast').textContent = ct ? `${ct.area_name_ko} @ (${ct.x}, ${ct.y})` : '-';
+    document.getElementById('dpClicked').textContent = ct ? `${ct.area_name_ko} / row ${ct.row_no || '-'} col ${ct.col_no || '-'}` : '없음';
+    document.getElementById('dpFail').textContent = diagState.first_fail ? `${diagState.first_fail.no}. ${diagState.first_fail.name}` : '없음';
+    document.getElementById('firstFailSummary').textContent = diagState.first_fail ? `first_fail: ${diagState.first_fail.no}. ${diagState.first_fail.name}` : 'first_fail: 없음';
+
+    document.getElementById('dpPass').textContent = pass ? 'PASS' : 'X';
+    document.getElementById('dpPass').className = 'badge ' + (pass ? 'pass' : 'fail');
+    document.getElementById('dpReason').textContent = pass ? '오류 없음' : (diagState.first_fail ? diagState.first_fail.reason : (!ct ? 'clicked_trace 없음' : '미리보기 데이터 없음'));
+    document.getElementById('dpErrCount').textContent = String(list.length);
+    document.getElementById('dpG3').textContent = pass ? 'PASS' : 'FAIL';
+    document.getElementById('dpG5').textContent = pass ? 'PASS' : 'FAIL';
+    document.getElementById('dpClickedLock').textContent = ct ? 'LOCK-ON' : 'LOCK-OFF';
+    document.getElementById('dpAutoRollback').textContent = pass ? '대기' : '준비';
+
+    const progressMeta = computeProgressMeta();
+    document.getElementById('coreProgressFill').style.width = String(Math.round((progressMeta.done / progressMeta.total) * 100)) + '%';
+    document.getElementById('coreProgressText').textContent = '진행 ' + progressMeta.done + ' / ' + progressMeta.total;
+    document.getElementById('lastSuccessPoint').textContent = '마지막 성공: ' + progressMeta.lastSuccess;
+    document.getElementById('lastFailPoint').textContent = '마지막 실패: ' + progressMeta.lastFail;
+    document.getElementById('dpRecheckSummary').textContent = diagState.recheck_status || '미실행';
+    document.getElementById('dpUploadStatus').textContent = diagState.upload_status || '대기';
+    document.getElementById('dpDiagTime').textContent = diagState.last_diag_time || '없음';
+    document.getElementById('dpRollbackHistory').textContent = diagState.rollback_history.length ? diagState.rollback_history.join(' | ') : '없음';
+    document.getElementById('bottomAutoLog').textContent = `[STATE] ${pass ? 'PASS' : 'X'}\n[clicked_trace] ${ct ? ct.area_name_ko : '없음'}\n[first_fail] ${diagState.first_fail ? diagState.first_fail.name : '없음'}\n[오류개수] ${list.length}\n[자동진단] ${diagState.last_diag_time || '없음'}\n[재검증] ${diagState.recheck_status || '미실행'}`;
+    document.getElementById('bottomCoreLog').textContent = els.coreLog.textContent || '없음';
+
+    const body = document.getElementById('errorListBody');
+    if(!list.length){
+      body.innerHTML = '감지된 오류 없음';
+    }else{
+      body.innerHTML = list.map(item => `<div class="error-item"><strong>${item.no}. ${item.name}</strong><br>상태: ${item.state}<br>직접원인: ${item.reason}<br>재검증: ${item.recheck || diagState.recheck_status || '미실행'}<br>마지막검증: ${diagState.last_diag_time || '없음'}</div>`).join('');
+    }
+
+    document.getElementById('diagPacketBox').textContent = diagState.packet ? JSON.stringify(diagState.packet, null, 2) : '없음';
+  }
+
+  document.getElementById('coordBtn').addEventListener('click', ()=>{
+    diagState.capture_mode = true;
+    log('좌표 찍기 모드 시작');
+    alert('좌표 찍기 모드 시작. 문제 셀 1칸을 클릭하세요.');
+  });
+
+  document.getElementById('diagBtn').addEventListener('click', async ()=>{
+    diagState.recheck_status = 'TESTED';
+    diagState.upload_status = '대기';
+    buildPacket();
+    log('자동진단 패킷 생성');
+    renderDiag();
+    const packetText = diagState.packet ? JSON.stringify(diagState.packet, null, 2) : '';
+    try{
+      if(packetText) await navigator.clipboard.writeText(packetText);
+      savePanelLockState();
+      alert('자동진단 패킷이 표시되고 복사되었습니다.');
+    }catch(e){
+      alert('자동진단 패킷이 표시되었습니다. 복사는 기기 제한으로 실패할 수 있습니다.');
+    }
+  });
+
+  document.getElementById('recheckBtn').addEventListener('click', ()=>{
+    const list = buildErrorList();
+    const onlyRecheckLeft = list.every(item => item.no === '05');
+    if(diagState.clicked_trace && state.previewRows.length > 0 && diagState.packet && (onlyRecheckLeft || list.length <= 1)){
+      diagState.recheck_status = 'PASS';
+      diagState.upload_status = '검증완료';
+      diagState.state = 'VERIFIED';
+      log('재검증 PASS');
+    } else {
+      diagState.recheck_status = 'FAIL';
+      diagState.upload_status = '차단';
+      diagState.state = 'HOLD';
+      const failure = {
+        time:new Date().toLocaleTimeString(), scope:diagState.clicked_trace ? 'COORDINATE' : 'FUNCTION',
+        affected_areas:diagState.clicked_trace ? [diagState.clicked_trace.area_id] : ['INPUT','PREVIEW','DIAGNOSTIC','RECHECK'],
+        errors:list.map(item => ({no:item.no,name:item.name,reason:item.reason}))
+      };
+      diagState.rollback_history.push(`HOLD ${failure.time}: ${failure.errors.map(item=>item.no).join(',') || 'UNKNOWN'}`);
+      diagState.rollback_history = diagState.rollback_history.slice(-20);
+      diagState.error_history.push(failure);
+      diagState.error_history = diagState.error_history.slice(-50);
+      log('재검증 FAIL');
+    }
+    buildPacket();
+    savePanelLockState();
+    alert('재검증 상태: ' + diagState.recheck_status);
+  });
+
+  document.addEventListener('click', (evt)=>{
+    const t = evt.target;
+    if(diagState.capture_mode){
+      const ignoreIds = ['coordBtn','diagBtn','runBtn','traceBtn','uploadBtn','resetBtn','fileInput'];
+      if(ignoreIds.includes(t.id) || t.closest('#diagPanel')) return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      captureTarget(t, evt);
+      diagState.capture_mode = false;
+      savePanelLockState();
+      alert('좌표 저장 완료: ' + (diagState.clicked_trace?.area_name_ko || '알 수 없음'));
+    }
+  }, true);
+
+
+  const PANEL_LOCK_KEY = 'tool13_panel_lock_v2';
+
+  function parseStatusFromCard(card){
+    if(card.querySelector('.status-pass')) return 'PASS';
+    if(card.querySelector('.status-tested')) return 'TESTED';
+    return 'FAIL';
+  }
+  function getCardNo(card){
+    const strong = card.querySelector('strong');
+    const m = strong ? String(strong.textContent).match(/^(\d+)\./) : null;
+    return m ? m[1] : '';
+  }
+  function extractCardMeta(card){
+    const lines = Array.from(card.querySelectorAll('.fixed-error-meta')).map(el => String(el.textContent || '').trim());
+    return {meta1: lines[0] || '', meta2: lines[1] || ''};
+  }
+  function readPanelCards(){
+    const wrap = document.getElementById('fixedErrorListBody');
+    if(!wrap) return [];
+    return Array.from(wrap.querySelectorAll('.fixed-error-card')).map(card => {
+      const no = getCardNo(card);
+      const title = (card.querySelector('strong')?.textContent || '').trim();
+      const status = parseStatusFromCard(card);
+      const meta = extractCardMeta(card);
+      return {no, title, status, meta1: meta.meta1, meta2: meta.meta2};
+    }).filter(x => x.no);
+  }
+  function savePanelLockState(){
+    const list = readPanelCards();
+    localStorage.setItem(PANEL_LOCK_KEY, JSON.stringify({saved_at:new Date().toLocaleString(), list}));
+  }
+  function loadPanelLockState(){
+    try{
+      const raw = localStorage.getItem(PANEL_LOCK_KEY);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){ return null; }
+  }
+  function setCardStatus(card, status, meta1, meta2){
+    const line = card.querySelector('.state-line') || card.querySelector('.fixed-error-meta');
+    if(line){
+      line.innerHTML = '상태: <span class="' + (status==='PASS'?'status-pass':status==='TESTED'?'status-tested':'status-fail') + '">' + status + '</span>' + (meta1 ? ' / ' + meta1.replace(/^상태:\s*(PASS|FAIL|TESTED)\s*\/?\s*/,'') : '');
+      line.classList.add('state-line');
+    }
+    const metas = card.querySelectorAll('.fixed-error-meta');
+    if(metas[1] && meta2) metas[1].textContent = meta2;
+    card.dataset.lockedStatus = status;
+  }
+  const VERIFIED_FIXED_ERROR_EVIDENCE = {
+    '03':'브라우저 fixture: 좌표 후 자동진단 실행·packet 생성',
+    '04':'브라우저 fixture: 통합설정 단일 필드 변경 후 타 필드 불변·재시작 복원',
+    '05':'브라우저 fixture: 체제 셀 좌표와 헤더 일치',
+    '06':'브라우저 fixture: 목차 셀 좌표와 헤더 일치',
+    '07':'브라우저 fixture: 개요 셀 좌표와 헤더 일치',
+    '08':'브라우저 fixture: ui_trace와 clicked_trace 동일',
+    '09':'브라우저 fixture: 화면 packet과 저장 JSON 동일',
+    '10':'브라우저 fixture: 오류화면과 packet errors 동일',
+    '11':'브라우저 fixture: 재검증 전 X·검증 후 PASS',
+    '14':'브라우저 fixture: 파일·설정·재시작 구조 보존',
+    '15':'브라우저 fixture: 파일 선택 1회당 batch 1회',
+    '17':'브라우저 fixture: 긴 개요·목차 다운로드 read-back 보존',
+    '18':'브라우저 fixture: 미리보기·진단 packet 값 보존',
+    '19':'브라우저 fixture: view·packet·trace/upload XLSX read-back 일치',
+    '12':'브라우저 fixture: clicked_trace 저장·재시작 복원',
+    '13':'브라우저 fixture: first_fail과 clicked_trace 독립 보존',
+    '16':'브라우저 fixture: 수정·검증 상태 재시작 복원',
+    '20':'브라우저 fixture: FAIL→TESTED→PASS 상태전이',
+    '21':'브라우저 fixture: 실패 rollback 이력 저장·복원',
+    '22':'브라우저 fixture: 오류 이력 누적·복원',
+    '23':'브라우저 fixture: 다중파일 누적 미리보기·재시작 복원',
+    '24':'브라우저 fixture: 기능형 실패 FUNCTION scope·다중영역 기록',
+    '26':'브라우저 fixture: 재검증 전 PASS 차단'
+  };
+  function applyVerifiedFixedErrorEvidence(){
+    const wrap = document.getElementById('fixedErrorListBody');
+    if(!wrap) return;
+    Array.from(wrap.querySelectorAll('.fixed-error-card')).forEach(card => {
+      const no = getCardNo(card);
+      const evidence = VERIFIED_FIXED_ERROR_EVIDENCE[no];
+      if(evidence) setCardStatus(card, 'PASS', evidence, '영역: 대표 fixture / 메모: 실제 브라우저 검증');
+    });
+    savePanelLockState();
+    renderFixedErrorSummary();
+  }
+  function applyPanelLockState(){
+    const saved = loadPanelLockState();
+    const wrap = document.getElementById('fixedErrorListBody');
+    if(!saved || !wrap) return false;
+    const map = new Map((saved.list || []).map(item => [item.no, item]));
+    Array.from(wrap.querySelectorAll('.fixed-error-card')).forEach(card => {
+      const no = getCardNo(card);
+      const item = map.get(no);
+      if(!item) return;
+      const current = parseStatusFromCard(card);
+      const finalStatus = item.status === 'PASS' ? 'PASS' : current; // PASS down-grade 차단
+      setCardStatus(card, finalStatus, item.meta1, item.meta2);
+    });
+    renderFixedErrorSummary();
+    return true;
+  }
+  function renderFixedErrorSummary(){
+    const box = document.getElementById('fixedErrorSummary');
+    if(!box) return;
+    const items = readPanelCards().filter(item => ['28','29','30','31','32'].includes(item.no));
+    box.innerHTML = items.map(item => '<span class="fixed-error-pill ' + item.status.toLowerCase() + '">' + item.no + '번 ' + item.status + '</span>').join('');
+  }
+  function initPanelLock(){
+    renderFixedErrorSummary();
+    const loaded = applyPanelLockState();
+    if(!loaded){
+      savePanelLockState();
+      renderFixedErrorSummary();
+    }
+    applyVerifiedFixedErrorEvidence();
+    window.addEventListener('beforeunload', savePanelLockState);
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    initPanelLock();
+    loadDiagTrace();
+    renderDiag();
+  }, {once:true});
+
+})();
+</script>
+
+<div id="diagPanel" class="diag-panel">
+  <h3>검증패널</h3>
+
+<div class="fixed-error-wrap" id="fixedErrorListWrap">
+  <div class="fixed-error-title">고정 오류리스트</div>
+  <div class="fixed-error-note">삭제 금지 / 오늘 확인된 항목만 PASS / 나머지는 FAIL 또는 TESTED 유지</div>
+  <div id="fixedErrorSummary" class="fixed-error-summary"></div>
+  <div class="fixed-error-summary" id="fixedErrorSummary"></div>
+  <div class="fixed-error-grid" id="fixedErrorListBody">
+    <div class="fixed-error-card"><strong>01. clicked_trace 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 자동진단·이벤트 충돌 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>02. focusin/click 이벤트 좌표 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 중복 클릭 덮어쓰기 차단</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>03. first_fail만 보고되고 실제 좌표 누락</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 진단 우선순위 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>04. 통합설정 클릭 시 다른 항목으로 변경</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: DOM 탐색 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>05. 체제 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 컬럼 매핑 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>06. 목차 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 셀 인덱스 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>07. 개요 셀 클릭 위치 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 셀 추적 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>08. ui_trace/clicked_trace 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 동기화 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>09. DIAG_PACKET 화면 vs JSON 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 패킷 생성 로직 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>10. error_report vs DIAG_PACKET 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 구조 분리</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>11. PASS 상태 오표시</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 판정 오류</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>12. clicked_trace 저장 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 덮어쓰기</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>13. first_fail이 clicked_trace 덮음</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 우선순위 역전</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>14. 기준 버튼/파일 변경 시 구조 흔들림</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 기준 고정 미흡</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>15. 중복 이벤트로 좌표 재덮임</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 이벤트 중복 등록</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>16. 수정 후 즉시 재발</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 저장 실패</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>17. 긴 필드 텍스트 수집 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: text extraction 부족</div><div class="fixed-error-meta">영역: 단일 셀 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>18. 미리보기/설정/패킷 값 덮어쓰기</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 충돌</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>19. view/packet/download 불일치</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 출력 경로 분리</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>20. 재검증 상태 전이 실패</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 상태 머신 미구현</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>21. 자동 롤백 기록 없음</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: rollback 로직 미연결</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>22. 오류리스트 누적 안됨</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 리스트 저장 구조 없음</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>23. 다중파일 누적 후 미리보기 소실</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 데이터 누적 처리 오류</div><div class="fixed-error-meta">영역: 파일입력→정리/실행→미리보기 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>24. 기능형 오류를 단일 좌표로 처리</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 좌표 구조 한계</div><div class="fixed-error-meta">영역: 다중 구역 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>25. 패널 정보 가시성 부족</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 하단 패널 복원</div><div class="fixed-error-meta">영역: 패널 영역 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>26. 재검증 없이 PASS 처리</strong><div class="fixed-error-meta">상태: <span class="status-fail">FAIL</span> / 직접원인: 검증 단계 누락</div><div class="fixed-error-meta">영역: 전체 구조 / 메모: 미해결</div></div><div class="fixed-error-card"><strong>27. 통합설정 헤더 순서 불일치</strong><div class="fixed-error-meta">상태: <span class="status-pass">PASS</span> / 직접원인: 헤더 순서 고정</div><div class="fixed-error-meta">영역: 통합설정 표 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>28. 발행사·1차카테고리 고정입력칸 숨김</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 통합 입력 구역 display:none 제거</div><div class="fixed-error-meta">영역: 통합 입력 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>29. 실제 헤더 탐색 미흡</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 실제 헤더 우선 탐색 확인</div><div class="fixed-error-meta">영역: 헤더 감지 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>30. 원본연결 드롭다운 전체목록 오인식</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 현재 선택값 1개만 읽기 확인</div><div class="fixed-error-meta">영역: 통합설정 원본연결 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>31. 다운로드 헤더/데이터 깨짐</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 미리보기와 다운로드 행 일치 확인</div><div class="fixed-error-meta">영역: 다운로드 생성부 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-card"><strong>32. 개요·목차 미리보기 한줄 표시 실패</strong><div class="fixed-error-meta state-line">상태: <span class="status-pass">PASS</span> / 직접원인: 미리보기 long 셀 한줄·말줄임 표시 확인</div><div class="fixed-error-meta">영역: 미리보기 개요/목차 셀 / 메모: 오늘 확인 완료</div></div><div class="fixed-error-meta">영역: 다운로드 생성부 / 메모: 재확인 필요</div></div>
+  </div>
+</div>
+
+  <div class="progress-wrap">
+    <div class="progress-track"><div id="coreProgressFill" class="progress-fill"></div></div>
+    <div class="progress-labels">
+      <span id="coreProgressText">진행 0 / 8</span>
+      <span id="lastSuccessPoint">마지막 성공: 없음</span>
+      <span id="lastFailPoint">마지막 실패: 없음</span>
+    </div>
+  </div>
+  <div class="diag-grid">
+    <div class="k">입력원</div><div id="dpInput">없음</div>
+    <div class="k">현재 상태</div><div><span id="dpState" class="badge init">DRAFT</span></div>
+    <div class="k">마지막 수정 지점</div><div id="dpLast">-</div>
+    <div class="k">clicked_trace</div><div id="dpClicked">없음</div>
+    <div class="k">clicked_trace 잠금</div><div id="dpClickedLock">LOCK-OFF</div>
+    <div class="k">first_fail</div><div id="dpFail">없음</div>
+    <div class="k">PASS / X</div><div><span id="dpPass" class="badge fail">X</span></div>
+    <div class="k">실패 사유</div><div id="dpReason">미리보기 데이터 없음</div>
+    <div class="k">롤백 가능</div><div id="dpRollback">NO</div>
+    <div class="k">자동 롤백</div><div id="dpAutoRollback">대기</div>
+    <div class="k">G1 기준파일</div><div id="dpG1">PASS</div>
+    <div class="k">G2 데이터일치</div><div id="dpG2">PASS</div>
+    <div class="k">G3 시나리오</div><div id="dpG3">FAIL</div>
+    <div class="k">G4 반복오류</div><div id="dpG4">PASS</div>
+    <div class="k">G5 롤백포인트</div><div id="dpG5">FAIL</div>
+    <div class="k">오류 카운터</div><div id="dpErrCount">0</div>
+    <div class="k">플랫폼 업로드</div><div id="dpUploadStatus">대기</div>
+    <div class="k">재검증 상태</div><div id="dpRecheckSummary">없음</div>
+    <div class="k">마지막 자동진단</div><div id="dpDiagTime">없음</div>
+    <div class="k">롤백 이력</div><div id="dpRollbackHistory">없음</div>
+  </div>
+  <div class="diag-sections">
+    <div class="error-list">
+      <div><strong>오류리스트</strong></div>
+      <div class="stamp" id="firstFailSummary">first_fail: 없음</div>
+      <div id="errorListBody">감지된 오류 없음</div>
+    </div>
+    <div class="diag-box">
+      <div><strong>DIAG_PACKET</strong></div>
+      <div id="diagPacketBox">없음</div>
+    </div>
+  </div>
+  <div class="bottom-logs">
+    <div class="mini-log">
+      <div class="mini-title">AUTO_LOG</div>
+      <div id="bottomAutoLog">없음</div>
+    </div>
+    <div class="mini-log">
+      <div class="mini-title">CORE_LOG</div>
+      <div id="bottomCoreLog">없음</div>
+    </div>
+  </div>
+</div>

@@ -16,18 +16,18 @@
   },
   "after": {
     "result": "PASS",
-    "elapsed_ms": 6885,
+    "elapsed_ms": 5155,
     "generated_rows": 823,
     "publisher": "MarketsandMarkets",
     "pass_count": 114,
     "hold_count": 0,
     "preview_rows_total": 823,
     "preview_rows_rendered": 200,
-    "output_file": "tool13_upload.xlsx",
+    "output_file": "MarketsandMarkets Revamped Reports Metadata 17072025 - 월드 입력.xls",
     "primary_category": "시장 조사 자료 - 영문판",
     "primary_category_rows": 823,
-    "output_bytes": 20962977,
-    "output_sha256": "d026b90abaf3f093e58c8427ed68435c53edb89a55be53ad1e1b2a0155fe8729"
+    "output_bytes": 2103296,
+    "output_sha256": "259c5be2c7fa987365c832926eb0be95fab1b140db923306531d977d39afdb81"
   },
   "validation": {
     "same_actual_input_retested": true,
@@ -36,6 +36,9 @@
     "primary_category_all_output_rows": "PASS",
     "temporary_excel_lock_files_excluded": true,
     "release_blockers": [],
+    "final_entrypoint": "13번_완전개선본.html",
+    "final_entrypoint_actual_file_e2e": "PASS",
+    "checked_at": "2026-09-28",
     "tests": [
       "tests/tool13_primary_category_mapping_value_e2e.js",
       "tests/tool13_actual_114_e2e.js"
