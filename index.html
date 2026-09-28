@@ -750,9 +750,9 @@
     const originalName = state.files.length ? state.files[state.files.length - 1] : 'tool13';
     const baseName = originalName.replace(/\.(xlsx?|csv)$/i, '') || 'tool13';
     const outputName = kind==='trace'
-      ? `${baseName} - 월드 입력 - 추적.xls`
-      : `${baseName} - 월드 입력.xls`;
-    XLSX.writeFile(wb, outputName, {bookType:'xls'});
+      ? `${baseName} - 월드 입력 - 추적.xlsx`
+      : `${baseName} - 월드 입력.xlsx`;
+    XLSX.writeFile(wb, outputName, {bookType:'xlsx'});
   }
 
   els.fileInput.addEventListener('change', async e=>{
