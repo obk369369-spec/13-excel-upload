@@ -5,6 +5,7 @@ const {pathToFileURL} = require('url');
 const crypto = require('crypto');
 const {chromium} = require('playwright');
 const XLSX = require('../vendor/xlsx.full.min.js');
+const normalizeText = value => String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
 
 const actualDir = process.env.TOOL13_ACTUAL_114_DIR ||
   'D:\\홈페이지 자료 입력\\Metadata Sheet (Market Report)\\MarketsandMarkets\\입력전\\MarketsandMarkets_Latest_엑셀파일만_평면압축';
@@ -23,6 +24,13 @@ function browserPath(){
     .sort()
     .map(name => path.join(actualDir, name));
   assert.strictEqual(inputs.length, 114, `expected exact actual set of 114 files, got ${inputs.length}`);
+  const sourceTitles = new Set();
+  const titleAliases = new Set(['Report Title','Title','Product Name']);
+  for(const input of inputs){
+    const wb = XLSX.read(fs.readFileSync(input), {type:'buffer'});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+    rows.forEach(row => row.forEach(value => { const original=normalizeText(value); if(original) sourceTitles.add(original); }));
+  }
 
   const browser = await chromium.launch({headless:true, executablePath:browserPath()});
   const page = await browser.newPage({acceptDownloads:true});
@@ -82,16 +90,39 @@ function browserPath(){
   const expectedOutputRows = Number((result.rowTag.match(/\d+/) || [0])[0]);
   assert.strictEqual(outputRows.length, expectedOutputRows, 'downloaded row count differs from preview row count');
   assert.ok(outputRows.every(row => row['1차카테고리'] === '시장 조사 자료 - 영문판'), 'primary category mismatch in downloaded rows');
+  const preservedTitles = outputRows.filter(row => sourceTitles.has(normalizeText(row['상품명']))).length;
+  const unmatchedTitles = outputRows.map(row => normalizeText(row['상품명'])).filter(title => !sourceTitles.has(title));
+  const dateRows = outputRows.filter(row => String(row['발행일'] || '').trim()).length;
+  const currencyRows = outputRows.filter(row => String(row['환(u,e,g,j)'] || '').trim() === 'u').length;
+  const atomicResults = {
+    'T13-01': {pass:preservedTitles === outputRows.length, actual:`${preservedTitles}/${outputRows.length} source-cell exact title matches`, sample:unmatchedTitles.slice(0,5)},
+    'T13-03': {pass:false, actual:'official 18-category reference is not present in the deployed mapper'},
+    'T13-04': {pass:false, actual:'actual 114-file set produced HOLD 0; no uncertain-value negative input in this run'},
+    'T13-05A': {pass:dateRows === outputRows.length, actual:`${dateRows}/${outputRows.length} publication dates present`},
+    'T13-05B': {pass:currencyRows === outputRows.length, actual:`${currencyRows}/${outputRows.length} USD currency codes preserved as u`},
+    'T13-07A': {pass:false, actual:'no required-field negative input in this run'},
+    'T13-07B': {pass:false, actual:'no missing-value negative input in this run'},
+    'T13-07C': {pass:false, actual:'duplicate-block count exists but no independent duplicate input/output assertion in this run'}
+  };
   assert.strictEqual(validation.status, 'PASS', `validation=${JSON.stringify(validation.errors)}`);
-  console.log(JSON.stringify({
-    status:'PASS', input_files:inputs.length, elapsed_ms:Date.now()-started,
+  const evidence = {
+    status:Object.values(atomicResults).every(item => item.pass) ? 'PASS' : 'FAIL', input_files:inputs.length, elapsed_ms:Date.now()-started,
     file_info:result.fileInfo, row_tag:result.rowTag, publisher:result.publisherTag,
     preview_dom_rows:result.previewRows, output_rows:outputRows.length,
     pass_count:validation.status === 'PASS' ? 114 : 0,
     hold_count:validation.status === 'PASS' ? 0 : validation.errors.length,
     primary_category:'시장 조사 자료 - 영문판', primary_category_rows:outputRows.length,
+    english_title_preserved_rows:preservedTitles,
+    publication_date_present_rows:dateRows,
+    usd_currency_rows:currencyRows,
+    atomic_results:atomicResults,
     output_file:download.suggestedFilename(), output_bytes:fs.statSync(downloadPath).size,
     output_sha256:crypto.createHash('sha256').update(fs.readFileSync(downloadPath)).digest('hex')
-  }));
+  };
+  const evidencePath = path.resolve(__dirname, '..', 'evidence', 'tool13_remaining_atomic_evidence.json');
+  fs.mkdirSync(path.dirname(evidencePath), {recursive:true});
+  fs.writeFileSync(evidencePath, JSON.stringify(evidence, null, 2) + '\n');
+  console.log(JSON.stringify(evidence));
   await browser.close();
+  if(evidence.status !== 'PASS') process.exitCode = 1;
 })().catch(error => { console.error(error); process.exit(1); });

@@ -1,0 +1,61 @@
+{
+  "status": "FAIL",
+  "input_files": 114,
+  "elapsed_ms": 5125,
+  "file_info": "파일 114개 / 누적 823행 / 중복차단 0행",
+  "row_tag": "행 823",
+  "publisher": "발행사 MarketsandMarkets",
+  "preview_dom_rows": 200,
+  "output_rows": 823,
+  "pass_count": 114,
+  "hold_count": 0,
+  "primary_category": "시장 조사 자료 - 영문판",
+  "primary_category_rows": 823,
+  "english_title_preserved_rows": 672,
+  "publication_date_present_rows": 823,
+  "usd_currency_rows": 823,
+  "atomic_results": {
+    "T13-01": {
+      "pass": false,
+      "actual": "672/823 source-cell exact title matches",
+      "sample": [
+        "Knee Replacement Surgery Market by Procedure Type (Knee Replacement: Total, Partial, Revision), Product (Implants: Hybrid, Plastic, Metal or Ceramic; Orthobiologic, Braces), Application (Arthritis, Cancer), End User (Clinics, ASCs) - Global Forecast to 20",
+        "Canned Motor Pumps Market by Type (Standard Basic Pumps, Reverse Circulation Pumps, High Temperature Pumps, Self-Priming Pumps, Others), By End User (Chemical, Oil & Gas, Power, Refrigeration, Others), Capacity (Low, Medium, High), Installation Type (Vert",
+        "Antimony-free Polyesters Market by Product Type (Polyethylene Terephthalate (PET), Polytrimethylene Terephthalate (PTT), Polybutylene Terephthalate (PBT)), Catalyst (Titanium-based Catalyst, Aluminum-based Catalyst, Titanium-Magnesium-based Catalyst), End",
+        "LiDAR Simulation Market by LiDAR Type (Mechanical LiDAR, Solid-state LiDAR), Method (Testing Method, Simulation Method), Laser Wavelength (Short Infrared Spectrum and Long Wave Infrared Spectrum), Vehicle Type (Passenger Cars, Commercial Vehicles), Level",
+        "Semiconductor Ceramic Packaging Materials Market by Material (Alumina, Aluminum Nitride, Silicon Nitride, Silicon Carbide, Beryllium Oxide), Packaging Technology (Through-Hole Packages, Surface Mount Packages – Leaded, Surface Mount Packages – Leadless, A"
+      ]
+    },
+    "T13-03": {
+      "pass": false,
+      "actual": "official 18-category reference is not present in the deployed mapper"
+    },
+    "T13-04": {
+      "pass": false,
+      "actual": "actual 114-file set produced HOLD 0; no uncertain-value negative input in this run"
+    },
+    "T13-05A": {
+      "pass": true,
+      "actual": "823/823 publication dates present"
+    },
+    "T13-05B": {
+      "pass": true,
+      "actual": "823/823 USD currency codes preserved as u"
+    },
+    "T13-07A": {
+      "pass": false,
+      "actual": "no required-field negative input in this run"
+    },
+    "T13-07B": {
+      "pass": false,
+      "actual": "no missing-value negative input in this run"
+    },
+    "T13-07C": {
+      "pass": false,
+      "actual": "duplicate-block count exists but no independent duplicate input/output assertion in this run"
+    }
+  },
+  "output_file": "MarketsandMarkets Revamped Reports Metadata 17072025 - 월드 입력.xls",
+  "output_bytes": 2103296,
+  "output_sha256": "259c5be2c7fa987365c832926eb0be95fab1b140db923306531d977d39afdb81"
+}
