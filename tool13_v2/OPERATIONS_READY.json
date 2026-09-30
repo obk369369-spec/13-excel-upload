@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "target": "TOOL013_V2",
+  "version_name": "13번 엑셀 자동 업로드 V2",
+  "status": "OPERATIONS_READY",
+  "translation_acceptance": "PASS",
+  "actual_xls_e2e": "PASS",
+  "negative_tests": "PASS",
+  "stable_runtime_unchanged": true,
+  "stable_runtime_sha256": "878d2dc59e7edde06dd46131816747bc3ebfe55774a494cf6c12ff64458e8f84",
+  "evidence": [
+    "evidence\\tool13_v2_translation_acceptance.json",
+    "evidence\\tool13_v2_actual_template_e2e.json"
+  ],
+  "additional_preflight_required": 0,
+  "updated_at": "2026-09-30T03:21:37.258756+00:00"
+}

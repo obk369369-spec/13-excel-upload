@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "target": "TOOL013_V2",
+  "status": "PARTIAL_TRANSLATION_APPROVAL_FIXTURE_MISSING",
+  "actual_input_xls": {
+    "path": "I:\\오부장 AI (인공지능)\\WIC34_C_REBUILD\\_repo13_candidate\\tool13_v2\\TOOL013_실제입력양식_작업복사본.xls",
+    "sha256": "b31a4f76c797b95d4ea2a6a38dc199657c56d2258f90c1d0e7a2bf880377891d",
+    "bytes": 33792
+  },
+  "actual_output_xls": {
+    "path": "I:\\오부장 AI (인공지능)\\WIC34_C_REBUILD\\_repo13_candidate\\tool13_v2\\TOOL013_V2_실제검증결과.xls",
+    "sha256": "6c42e6321e75d46ae15d9c0d04c556a870be281846efaf97b187e3ea4d898e93",
+    "bytes": 7680,
+    "reopened_rows": 1
+  },
+  "columns": {
+    "expected": [
+      "발행사",
+      "상품명",
+      "한글명",
+      "1차카테고리",
+      "2차카테고리",
+      "3차카테고리",
+      "페이지수",
+      "개요",
+      "목차",
+      "발행일",
+      "파일명",
+      "판매유형",
+      "환(u,e,g,j)",
+      "HardCapy가격",
+      "PDF가격",
+      "저자",
+      "체제",
+      "ISBN/CODE"
+    ],
+    "actual": [
+      "발행사",
+      "상품명",
+      "한글명",
+      "1차카테고리",
+      "2차카테고리",
+      "3차카테고리",
+      "페이지수",
+      "개요",
+      "목차",
+      "발행일",
+      "파일명",
+      "판매유형",
+      "환(u,e,g,j)",
+      "HardCapy가격",
+      "PDF가격",
+      "저자",
+      "체제",
+      "ISBN/CODE"
+    ],
+    "status": "PASS"
+  },
+  "protected_source_unchanged": true,
+  "category_existing_pass_reused": true,
+  "actual_xls_e2e": "PASS",
+  "negative_tests": {
+    "passed": 12,
+    "total": 12,
+    "cases": {
+      "wrong_translation": true,
+      "blank_translation": true,
+      "nonexistent_category": true,
+      "wrong_category": true,
+      "blank_category": true,
+      "missing_required": true,
+      "changed_column_order": true,
+      "changed_protected_field": true,
+      "source_value_damaged": true,
+      "unexpected_value_added": true,
+      "corrupted_output": true,
+      "reopen_failure": true
+    },
+    "status": "PASS"
+  },
+  "translation": {
+    "source": "China Semiconductor Market for Automotive by Component, Global Export Trends and Strategic Recommendation",
+    "actual": "자동차용 부품별 중국 반도체 시장, 세계 수출 동향 및 전략적 제언",
+    "mechanical_validation": "PASS",
+    "approved_expected_comparison": "HOLD_APPROVED_TRANSLATION_FIXTURE_NOT_PRESENT"
+  },
+  "operations_ready": false,
+  "reason": "User-approved historical Korean title fixture is not present in repository evidence; no false COMPLETE."
+}
