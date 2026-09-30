@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "source": "USER_PROVIDED_2026-09-30",
+  "parent": {"ca_id": "10", "name": "시장 조사 자료 - 영문판"},
+  "categories": [
+    {"id": "1010", "name": "반도체/전자부품", "aliases": ["semiconductor", "electronic component", "chip", "integrated circuit"]},
+    {"id": "1020", "name": "신소재/복합재료", "aliases": ["advanced material", "composite material", "new material"]},
+    {"id": "1030", "name": "화학/정밀화학", "aliases": ["chemical", "fine chemical", "specialty chemical"]},
+    {"id": "1040", "name": "환경", "aliases": ["environment", "environmental", "waste management"]},
+    {"id": "1050", "name": "에너지", "aliases": ["energy", "battery", "power generation"]},
+    {"id": "1060", "name": "자동차/우주항공", "aliases": ["automotive", "transportation", "aerospace", "vehicle"]},
+    {"id": "1070", "name": "바이오산업", "aliases": ["biotechnology", "bioindustry", "bioprocess"]},
+    {"id": "1080", "name": "신약 산업/제약", "aliases": ["pharmaceutical", "drug discovery", "therapeutic"]},
+    {"id": "10a0", "name": "메디칼 디바이스", "aliases": ["medical device", "medical equipment", "diagnostic device"]},
+    {"id": "10b0", "name": "정보통신", "aliases": ["telecommunication", "information technology", "network infrastructure"]},
+    {"id": "10c0", "name": "전자기기/서비스", "aliases": ["consumer electronics", "electronic device", "electronics service"]},
+    {"id": "10d0", "name": "융합산업", "aliases": ["convergence", "cross industry", "hybrid industry"]},
+    {"id": "10e0", "name": "토목/건축", "aliases": ["construction", "civil engineering", "building"]},
+    {"id": "10f0", "name": "식품/음료", "aliases": ["food", "beverage", "nutrition"]},
+    {"id": "10g0", "name": "산업용 기계", "aliases": ["industrial machinery", "industrial equipment", "machine tool"]},
+    {"id": "10h0", "name": "무역", "aliases": ["trade", "import", "export"]},
+    {"id": "10i0", "name": "농업", "aliases": ["agriculture", "farming", "crop"]},
+    {"id": "10j0", "name": "화장품", "aliases": ["cosmetic", "beauty", "personal care"]}
+  ]
+}
