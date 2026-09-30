@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "tested_at": "2026-09-30T01:51:51.145573+00:00",
+  "actual_source": {
+    "title": "China Semiconductor Market for Automotive by Component, Global Export Trends and Strategic Recommendation",
+    "category": "Automotive and Transportation"
+  },
+  "translation_candidate": {
+    "name": "Argos Translate",
+    "license": "MIT_OR_CC0",
+    "source": "https://github.com/argosopentech/argos-translate",
+    "translated_title": "중국 반도체 시장은 부품, 글로벌 수출 동향 및 전략적 추천",
+    "nonempty": true,
+    "hangul_present": true,
+    "candidate_canary": "PASS",
+    "production_promotion": "HOLD_ACCEPTANCE_FIXTURE_COMPARISON_REQUIRED"
+  },
+  "matching_candidates": {
+    "exact_matches": [],
+    "normalized_matches": [],
+    "algorithm_canary": "PASS",
+    "production_promotion": "HOLD_OFFICIAL_18_CATEGORY_SOURCE_NOT_PRESENT"
+  },
+  "tool013_e2e": "PARTIAL_CANDIDATE_ONLY",
+  "existing_stable_runtime_mutated": false
+}
